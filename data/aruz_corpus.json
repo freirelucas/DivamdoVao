@@ -1,6 +1,7 @@
 {
   "_sobre": "Corpus rítmico auditável. Cada verso traz a transliteração silábica e a escansão do aruz persa (– longa, u curta, = superlonga). A escansão é a FONTE do ritmo musical: nenhum valor rítmico é inventado — todos derivam daqui. Fontes de escansão: Wikipedia 'Persian metres', persianlanguageonline.com (aruz parte 1), Grokipedia 'Aruz'/'Persian metres'.",
   "_notacao": {"–": "longa", "u": "curta", "=": "superlonga (= longa+curta)"},
+  "_metro_conferido": "Por verso: true = a escansão foi conferida e se decompõe nos pés do metro declarado (ver conferir_metro() em engine/generative.py); false = há divergência conhecida, ainda não resolvida em edição crítica. Os testes exigem que todo verso não conforme esteja marcado como false — a divergência fica visível em vez de silenciosa.",
   "_regras_aruz": [
     "A sílaba final de um hemistíquio conta sempre como longa.",
     "Sílaba superlonga equivale metricamente a longa seguida de curta.",
@@ -30,7 +31,8 @@
       "escansao": ["–","u","–","–","–","u","–","–","–","u","–"],
       "glosa_pt": "Escuta o junco, como conta a sua história",
       "imagem": "a flauta de junco (ney) que chora a separação",
-      "dominio_publico": true
+      "dominio_publico": true,
+      "metro_conferido": true
     },
     {
       "id": "masnavi_2",
@@ -41,7 +43,8 @@
       "escansao": ["–","u","–","–","–","u","–","–","–","u","–"],
       "glosa_pt": "das separações, ela se queixa",
       "imagem": "a queixa da separação",
-      "dominio_publico": true
+      "dominio_publico": true,
+      "metro_conferido": true
     },
     {
       "id": "divan_2214",
@@ -53,7 +56,9 @@
       "glosa_pt": "Aquele instante em que, contigo, o amado é como espinho",
       "imagem": "dois numa só alma — o instante do encontro",
       "dominio_publico": true,
-      "_nota": "Escansão aproximada para fins de protótipo; conferir com edição Foruzanfar antes de uso final."
+      "metro_conferido": false,
+      "_nota": "Escansão aproximada para fins de protótipo; conferir com edição Foruzanfar antes de uso final.",
+      "_divergencia_metro": "A escansão registrada aqui não se decompõe nos pés de ramal_mahzuf ('–u––'): os pés 2 e 3 saem como 'u–––', que é justamente o pé do hazaj (mafāʿīlun), já declarado acima. Ou o rótulo do metro está errado, ou a escansão está — é questão de edição crítica, não de código, e por isso nada aqui foi 'corrigido' automaticamente. Para resolver: a Ghazals-Foruzanfar Concordance (https://www.dar-al-masnavi.org/ghazals-foruz.html) dá o vazn de cada gazal do Divã."
     }
   ]
 }

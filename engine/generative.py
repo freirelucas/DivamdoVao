@@ -9,26 +9,44 @@ Nenhum valor rítmico é inventado. O ritmo da melodia DERIVA da escansão do
 aruz persa (sílabas longas/curtas do original de Rumi). Cada nota gerada
 carrega, no seu 'trace', a sílaba e o símbolo métrico que a originaram.
 
+A auditoria cobre três camadas, de cima para baixo:
+
+  1. METRO -> ESCANSÃO   conferir_metro() verifica que a escansão declarada no
+     corpus realmente se decompõe nos pés do metro declarado (aceitando pé
+     final truncado e anceps inicial). Sem isso, "o ritmo vem do aruz" seria
+     uma afirmação sobre um aruz que ninguém conferiu.
+  2. ESCANSÃO -> DURAÇÃO  durar_por_aruz(): dur = DUR_ARUZ[símbolo], com a
+     regra de que a sílaba final do hemistíquio conta como longa.
+  3. GRAU -> ALTURA       toda nota emitida satisfaz
+     midi == tonica_midi + MODOS[modo][grau_modal] + 12*oitava.
+     O passeio melódico é limitado em espaço de GRAU (não de semitom) e
+     REFLETIDO nas bordas, e é isso que garante a igualdade acima: a altura
+     nunca é recortada para um valor que não seja grau do modo.
+
 PIPELINE
 --------
 1. Escansão do verso (data/aruz_corpus.json) -> sequência de durações.
 2. Geração da melodia por prescrição afetiva sobre um modo (Clube da Esquina):
    as alturas seguem um contorno controlado por parâmetros (entropia, âmbito),
    mas as DURAÇÕES vêm do aruz. Semente fixa => reprodutível.
-3. Harmonização modal com tensões (maj7/9/13).
-4. Exportação: MusicXML, MIDI, e um relatório de auditoria (JSON) que liga
-   cada nota à sílaba persa de origem.
+3. Operações rítmicas opcionais (engine/ritmo.py), que preservam dur_base.
+4. Exportação (engine/export.py): MusicXML e MIDI só com a stdlib, sempre
+   acompanhados do relatório de auditoria (JSON) que liga cada nota à sílaba
+   persa de origem.
 
 Este módulo é puro (sem efeitos colaterais além de escrever arquivos quando
-chamado via CLI). Ver tests/ para verificação do mapeamento sílaba↔nota.
+chamado via CLI). Ver tests/ para verificação dos invariantes.
 """
 from __future__ import annotations
 import json, random, hashlib
-from dataclasses import dataclass, field, asdict
+from dataclasses import dataclass, field
 from pathlib import Path
 
 # duração musical por símbolo do aruz (em quarterLength, base 4/4)
 DUR_ARUZ = {"u": 0.5, "–": 1.0, "=": 1.5}
+
+# símbolos que contam como longa para a regra do fim de hemistíquio
+LONGAS = ("–", "=")
 
 # modos "Clube da Esquina": graus a partir da tônica (em semitons)
 MODOS = {
@@ -40,13 +58,25 @@ MODOS = {
 
 @dataclass
 class NotaTrace:
-    """Uma nota com sua trilha de auditoria."""
+    """Uma nota com sua trilha de auditoria.
+
+    dur_base guarda a duração vinda do aruz ANTES de qualquer operação
+    rítmica; dur é o valor final. Enquanto dur_base espelha DUR_ARUZ e as
+    operações aplicadas ficam registradas em Frase.operacoes, a afirmação
+    "nenhum valor rítmico é inventado" continua verificável.
+    """
     midi: int
     dur: float
     silaba: str
     aruz: str          # '–', 'u' ou '='
-    grau_modal: int
+    grau_modal: int    # índice em MODOS[modo]
+    oitava: int        # quantas oitavas acima da tônica
     origem_verso: str
+    dur_base: float = 0.0
+
+    def __post_init__(self):
+        if not self.dur_base:
+            self.dur_base = self.dur
 
 @dataclass
 class Frase:
@@ -54,6 +84,7 @@ class Frase:
     metro: str = ""
     modo: str = ""
     tonica_midi: int = 62  # D4
+    operacoes: list[str] = field(default_factory=list)
 
     def duracao_total(self) -> float:
         return sum(n.dur for n in self.notas)
@@ -72,6 +103,122 @@ def durar_por_aruz(escansao: list[str], final_longa: bool = True) -> list[float]
     return durs
 
 
+# ---------------------------------------------------------------------------
+# Camada 1 da auditoria: o metro declarado gera mesmo a escansão declarada?
+# ---------------------------------------------------------------------------
+
+def conferir_metro(verso: dict, metros: dict) -> dict:
+    """Decompõe a escansão do verso nos pés do metro declarado e relata as
+    divergências.
+
+    Duas licenças da prosódia persa são aceitas:
+
+    - **pé final truncado** (mahzuf/catalético): o último pé pode ser mais
+      curto que o padrão — é o que faz de `fāʿilātun fāʿilātun fāʿilun` o
+      metro do Masnavi;
+    - **anceps inicial**: a primeira posição do verso admite longa ou breve.
+
+    E a regra que o próprio corpus declara — a sílaba final do hemistíquio
+    conta sempre como longa — é aceita na última posição.
+
+    Devolve {metro, conforme, pes, divergencias}. Função pura.
+    """
+    nome = verso.get("metro", "")
+    metro = metros.get(nome)
+    if metro is None:
+        return {"metro": nome, "conforme": False, "pes": [],
+                "divergencias": [f"metro '{nome}' não declarado no corpus"]}
+
+    padrao = metro["padrao_pe"]
+    k = len(padrao)
+    escansao = verso["escansao"]
+    pes, divergencias = [], []
+
+    for inicio in range(0, len(escansao), k):
+        pe = escansao[inicio:inicio + k]
+        n_pe = inicio // k
+        primeiro = n_pe == 0
+        ultimo = inicio + k >= len(escansao)
+        divs_pe = []
+        for j, simbolo in enumerate(pe):
+            esperado = padrao[j]
+            if simbolo == esperado:
+                continue
+            if primeiro and j == 0:
+                continue                      # anceps inicial
+            if ultimo and j == len(pe) - 1 and simbolo in LONGAS:
+                continue                      # fim de hemistíquio = longa
+            divs_pe.append({"posicao": j + 1, "encontrado": simbolo,
+                            "esperado": esperado})
+        pes.append({
+            "n": n_pe + 1,
+            "escansao": "".join(pe),
+            "esperado": "".join(padrao[:len(pe)]),
+            "truncado": len(pe) < k,
+            "conforme": not divs_pe,
+        })
+        for d in divs_pe:
+            divergencias.append(
+                f"pé {n_pe + 1}, posição {d['posicao']}: "
+                f"encontrado '{d['encontrado']}', esperado '{d['esperado']}'")
+
+    return {"metro": nome, "conforme": not divergencias,
+            "pes": pes, "divergencias": divergencias}
+
+
+# ---------------------------------------------------------------------------
+# Camada 3 da auditoria: limitar em espaço de GRAU e refletir nas bordas
+# ---------------------------------------------------------------------------
+
+def graus_no_ambito(graus: list[int], ambito: int) -> int:
+    """Quantos índices de grau (contando oitavas) cabem dentro do âmbito.
+
+    O índice i vale MODOS[modo][i % 7] + 12*(i // 7) semitons acima da
+    tônica; a sequência é estritamente crescente, então basta subir até
+    estourar o âmbito. Devolve a contagem: os índices válidos são 0..n-1.
+    """
+    n = 0
+    while True:
+        oitava, dentro = divmod(n, len(graus))
+        if graus[dentro] + 12 * oitava > ambito:
+            return n
+        n += 1
+
+
+def refletir(idx: int, teto: int) -> int:
+    """Dobra o índice para dentro de [0, teto], espelhando nas bordas.
+
+    Refletir em vez de travar (o velho `min`/`max`) tem duas consequências
+    que importam para o projeto: o contorno não cria platôs de notas
+    repetidas ao encostar na borda, e o resultado é sempre um grau legítimo
+    do modo — o que mantém o relatório de auditoria capaz de explicar a
+    altura emitida.
+    """
+    if teto <= 0:
+        return 0
+    span = 2 * teto
+    idx %= span                      # Python: resultado não-negativo
+    return idx if idx <= teto else span - idx
+
+
+def _passear(grau_idx: int, passo: int, teto: int) -> int:
+    """Aplica um passo ao índice de grau, refletindo nas bordas do âmbito.
+
+    Detalhe que importa: a reflexão pura tem pontos fixos. Como a tônica fica
+    no piso do âmbito (grau 0), um passo de -2 a partir do grau 1 reflete de
+    volta para o grau 1 — e uma sequência de passos descendentes na borda
+    produziria justamente o platô de notas repetidas que a reflexão existe
+    para evitar. Quando isso acontece, o passo é espelhado (sobe o que ia
+    descer), de modo que todo passo não-nulo realmente se mova. Assim as
+    únicas notas repetidas que sobram são as intencionais: o passo 0 da regra
+    de contorno, o repouso da sílaba longa.
+    """
+    novo = refletir(grau_idx + passo, teto)
+    if passo and novo == grau_idx:
+        novo = refletir(grau_idx - passo, teto)
+    return novo
+
+
 def _semente(*partes) -> random.Random:
     """RNG determinística a partir de uma semente textual — reprodutibilidade
     é requisito de auditabilidade."""
@@ -85,16 +232,26 @@ def gerar_melodia(verso: dict, modo: str = "dorico", tonica_midi: int = 62,
     """
     Gera a melodia de UM verso.
     - DURAÇÕES: 100% do aruz (auditável).
-    - ALTURAS: passeio controlado pelos graus do modo; 'entropia' controla a
-      probabilidade de salto vs. grau conjunto; 'ambito' limita a extensão.
+    - ALTURAS: passeio pelos graus do modo; 'entropia' controla a
+      probabilidade de salto vs. grau conjunto; 'ambito' limita a extensão
+      em semitons, cortando em espaço de grau (ver graus_no_ambito).
+
+    Toda nota devolvida satisfaz
+    midi == tonica_midi + MODOS[modo][grau_modal] + 12*oitava.
     """
+    if modo not in MODOS:
+        raise ValueError(f"modo desconhecido: {modo!r}; use um de {sorted(MODOS)}")
     escansao = verso["escansao"]
     silabas = verso["translit_silabas"]
-    assert len(escansao) == len(silabas), \
-        f"Verso {verso['id']}: {len(silabas)} sílabas x {len(escansao)} símbolos"
+    if len(escansao) != len(silabas):
+        raise ValueError(
+            f"Verso {verso['id']}: {len(silabas)} sílabas x {len(escansao)} símbolos")
 
     durs = durar_por_aruz(escansao)
     graus = MODOS[modo]
+    teto = graus_no_ambito(graus, ambito) - 1
+    if teto < 0:
+        raise ValueError(f"âmbito {ambito} não acomoda nenhum grau de {modo}")
     rng = _semente(semente, verso["id"], modo, entropia)
 
     frase = Frase(metro=verso.get("metro",""), modo=modo, tonica_midi=tonica_midi)
@@ -105,43 +262,60 @@ def gerar_melodia(verso: dict, modo: str = "dorico", tonica_midi: int = 62,
             passo = rng.choice([-2, -1, 1, 2]) if rng.random() < 0.5 + entropia/2 else rng.choice([-1, 1])
         else:
             passo = rng.choice([-1, 0, 0, 1]) if rng.random() > entropia else rng.choice([-3, -2, 2, 3])
-        grau_idx = max(0, min(len(graus)*2 - 1, grau_idx + passo))
-        # mapeia índice de grau (com oitava) para semitom, respeitando o âmbito
+        grau_idx = _passear(grau_idx, passo, teto)
         oitava, dentro = divmod(grau_idx, len(graus))
-        semitom = graus[dentro] + 12*oitava
-        semitom = min(semitom, ambito)  # trava de âmbito
-        midi = tonica_midi + semitom
         frase.notas.append(NotaTrace(
-            midi=midi, dur=dur, silaba=silaba, aruz=simb,
-            grau_modal=dentro, origem_verso=verso["id"]))
-    # a última nota repousa na tônica ou terça (fechamento de frase)
+            midi=tonica_midi + graus[dentro] + 12*oitava, dur=dur,
+            silaba=silaba, aruz=simb, grau_modal=dentro, oitava=oitava,
+            origem_verso=verso["id"]))
+    # a última nota repousa em tônica, terça ou quinta DO MODO (fechamento de
+    # frase). Os graus saem de MODOS, e não de um intervalo fixo, senão o
+    # repouso cairia fora do modo em lídio e mixolídio (terça maior).
     if frase.notas:
-        frase.notas[-1].midi = tonica_midi + rng.choice([0, 3, 7])
+        fecho = min(rng.choice([0, 2, 4]), teto)
+        ult = frase.notas[-1]
+        ult.grau_modal, ult.oitava = fecho, 0
+        ult.midi = tonica_midi + graus[fecho]
     return frase
 
 
-def relatorio_auditoria(frase: Frase, verso: dict) -> dict:
-    """Prova de que cada duração veio do aruz. É o artefato de auditabilidade."""
+def relatorio_auditoria(frase: Frase, verso: dict, metros: dict | None = None) -> dict:
+    """Prova de que cada duração veio do aruz e cada altura, de um grau do
+    modo. É o artefato de auditabilidade.
+
+    Passando `metros`, o relatório inclui também a conferência metro↔escansão
+    (camada 1), fechando a cadeia de cima a baixo.
+    """
     linhas = []
     for n in frase.notas:
         linhas.append({
             "silaba": n.silaba, "aruz": n.aruz,
-            "dur_quarter": n.dur, "midi": n.midi, "grau_modal": n.grau_modal
+            "dur_base_quarter": n.dur_base, "dur_quarter": n.dur,
+            "midi": n.midi, "grau_modal": n.grau_modal, "oitava": n.oitava
         })
-    return {
+    rel = {
         "verso_id": verso["id"],
         "obra": verso.get("obra",""),
         "metro": frase.metro,
         "modo": frase.modo,
-        "regra": "dur = DUR_ARUZ[aruz]; última sílaba = longa",
+        "tonica_midi": frase.tonica_midi,
+        "regra_duracao": "dur_base = DUR_ARUZ[aruz]; última sílaba = longa",
+        "regra_altura": "midi = tonica_midi + MODOS[modo][grau_modal] + 12*oitava",
+        "operacoes_ritmicas": list(frase.operacoes),
         "duracao_total_quarters": frase.duracao_total(),
         "mapa_silaba_para_nota": linhas,
         "conferencia": {
             "n_silabas": len(verso["translit_silabas"]),
             "n_notas": len(frase.notas),
-            "alinhado": len(verso["translit_silabas"]) == len(frase.notas)
+            "alinhado": len(verso["translit_silabas"]) == len(frase.notas),
+            "metro_conferido": verso.get("metro_conferido"),
         }
     }
+    # compatibilidade: o nome antigo do campo continua disponível
+    rel["regra"] = rel["regra_duracao"]
+    if metros is not None:
+        rel["conferencia_metro"] = conferir_metro(verso, metros)
+    return rel
 
 
 if __name__ == "__main__":
@@ -151,12 +325,21 @@ if __name__ == "__main__":
     ap.add_argument("--modo", default="dorico", choices=list(MODOS))
     ap.add_argument("--corpus", default="data/aruz_corpus.json")
     ap.add_argument("--out", default="engine/saida")
+    ap.add_argument("--tonica", type=int, default=62,
+                    help="nota MIDI da tônica (62 = D4)")
+    ap.add_argument("--ambito", type=int, default=9,
+                    help="extensão máxima da melodia, em semitons acima da tônica")
+    ap.add_argument("--entropia", type=float, default=0.4,
+                    help="0 = grau conjunto, 1 = muitos saltos")
+    ap.add_argument("--semente", default="diva")
     args = ap.parse_args()
 
     corpus = carregar_corpus(args.corpus)
     verso = next(v for v in corpus["versos"] if v["id"] == args.verso)
-    frase = gerar_melodia(verso, modo=args.modo)
-    rel = relatorio_auditoria(frase, verso)
+    frase = gerar_melodia(verso, modo=args.modo, tonica_midi=args.tonica,
+                          entropia=args.entropia, ambito=args.ambito,
+                          semente=args.semente)
+    rel = relatorio_auditoria(frase, verso, corpus["metros"])
 
     Path(args.out).mkdir(parents=True, exist_ok=True)
     Path(f"{args.out}/{args.verso}_auditoria.json").write_text(
@@ -164,3 +347,7 @@ if __name__ == "__main__":
     print(f"Melodia gerada para {args.verso}: {len(frase.notas)} notas, "
           f"{frase.duracao_total()} quarters. Auditoria salva.")
     print("Alinhamento sílaba↔nota:", rel["conferencia"]["alinhado"])
+    cm = rel["conferencia_metro"]
+    print(f"Metro {cm['metro']} confere com a escansão:", cm["conforme"])
+    for d in cm["divergencias"]:
+        print("  divergência:", d)
