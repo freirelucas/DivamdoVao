@@ -1,0 +1,59 @@
+{
+  "_sobre": "Corpus rítmico auditável. Cada verso traz a transliteração silábica e a escansão do aruz persa (– longa, u curta, = superlonga). A escansão é a FONTE do ritmo musical: nenhum valor rítmico é inventado — todos derivam daqui. Fontes de escansão: Wikipedia 'Persian metres', persianlanguageonline.com (aruz parte 1), Grokipedia 'Aruz'/'Persian metres'.",
+  "_notacao": {"–": "longa", "u": "curta", "=": "superlonga (= longa+curta)"},
+  "_regras_aruz": [
+    "A sílaba final de um hemistíquio conta sempre como longa.",
+    "Sílaba superlonga equivale metricamente a longa seguida de curta.",
+    "Vogais curtas não são escritas no persa; a escansão resolve a leitura."
+  ],
+  "metros": {
+    "ramal_mahzuf": {
+      "pe": "fāʿilātun fāʿilātun fāʿilātun (fāʿilun)",
+      "padrao_pe": ["–","u","–","–"],
+      "descricao": "Metro do Masnavi. Ritmo corrente, veloz — 'propaga a alma ao êxtase' (uso místico).",
+      "assinatura_afetiva": "movimento espiritual, giro, corrente"
+    },
+    "hazaj": {
+      "pe": "mafāʿīlun mafāʿīlun",
+      "padrao_pe": ["u","–","–","–"],
+      "descricao": "Metro lírico comum em ghazais de amor.",
+      "assinatura_afetiva": "ondulação, anseio, embalo"
+    }
+  },
+  "versos": [
+    {
+      "id": "masnavi_1",
+      "obra": "Masnavi, Livro I, dístico 1",
+      "metro": "ramal_mahzuf",
+      "persa": "بشنو از نی چون حکایت می‌کند",
+      "translit_silabas": ["beš","naw","az","nay","čun","he","kā","yat","mī","ko","nad"],
+      "escansao": ["–","u","–","–","–","u","–","–","–","u","–"],
+      "glosa_pt": "Escuta o junco, como conta a sua história",
+      "imagem": "a flauta de junco (ney) que chora a separação",
+      "dominio_publico": true
+    },
+    {
+      "id": "masnavi_2",
+      "obra": "Masnavi, Livro I, dístico 1 (2º hemistíquio)",
+      "metro": "ramal_mahzuf",
+      "persa": "از جدایی‌ها شکایت می‌کند",
+      "translit_silabas": ["az","jo","dā","yī","hā","ši","kā","yat","mī","ko","nad"],
+      "escansao": ["–","u","–","–","–","u","–","–","–","u","–"],
+      "glosa_pt": "das separações, ela se queixa",
+      "imagem": "a queixa da separação",
+      "dominio_publico": true
+    },
+    {
+      "id": "divan_2214",
+      "obra": "Divã de Shams, gazal 2214 (abertura)",
+      "metro": "ramal_mahzuf",
+      "persa": "آن نفسی که با خودی یار چو خار آیدت",
+      "translit_silabas": ["ān","na","fa","sī","ke","bā","xo","dī","yār","čo","xār","ā","ya","dat"],
+      "escansao": ["–","u","–","–","u","–","–","–","u","–","–","–","u","–"],
+      "glosa_pt": "Aquele instante em que, contigo, o amado é como espinho",
+      "imagem": "dois numa só alma — o instante do encontro",
+      "dominio_publico": true,
+      "_nota": "Escansão aproximada para fins de protótipo; conferir com edição Foruzanfar antes de uso final."
+    }
+  ]
+}

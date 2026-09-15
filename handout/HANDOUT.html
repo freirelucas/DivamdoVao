@@ -1,0 +1,128 @@
+<!DOCTYPE html><html lang=pt-BR><head><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><title>Handout — Divã do Vão</title><style>
+body{font-family:Georgia,serif;max-width:820px;margin:0 auto;padding:24px 18px 80px;
+background:#12100c;color:#efe8da;font-size:17px;line-height:1.6}
+h1,h2,h3{color:#d0a94b} h1{border-bottom:2px solid #332d22;padding-bottom:.2em}
+h2{border-bottom:1px solid #332d22;padding-bottom:.2em;margin-top:1.8em}
+code,pre{background:#0e0c08;color:#d0a94b;border:1px solid #332d22;border-radius:6px}
+code{padding:1px 5px;font-size:.9em} pre{padding:12px;overflow-x:auto;font-size:.82rem;color:#b0a390}
+table{border-collapse:collapse;width:100%;font-size:.9rem} th,td{border:1px solid #332d22;padding:7px 10px;text-align:left}
+th{color:#c06a3c} a{color:#c06a3c} blockquote{border-left:3px solid #c06a3c;padding-left:14px;color:#b0a390;font-style:italic}
+em{color:#b0a390}
+</style></head><body><h1>Divã do Vão — Handout do Projeto</h1>
+<p><em>Da rítmica de Rumi (aruz persa) à canção, com colorido Clube da Esquina e auditabilidade de ponta a ponta.</em></p>
+<hr />
+<h2>1. O que é</h2>
+<p>Divã do Vão é uma <strong>ferramenta de co-produção musical</strong> e um <strong>ciclo de canções</strong>. Parte da obra de Rumi (séc. XIII, domínio público) e a transforma em música por um processo em que:</p>
+<ol>
+<li>a <strong>rítmica</strong> da melodia é derivada da métrica quantitativa do persa original (o <em>aruz</em>), não inventada;</li>
+<li>a <strong>harmonia e a cor</strong> seguem a linguagem do Clube da Esquina (modos, tensões, baixos móveis);</li>
+<li>a <strong>tradução para o português</strong> é feita em <strong>interação com o usuário</strong>, ajustando as sílabas às durações;</li>
+<li>cada decisão é <strong>auditável</strong>: toda nota rastreia até a sílaba persa que a originou.</li>
+</ol>
+<p>Não é geração de "música por IA" como caixa-preta. É um instrumento onde o material de Rumi é o motor e o humano co-produz.</p>
+<hr />
+<h2>2. Por que o aruz é o motor</h2>
+<p>Rumi escreveu em <strong>persa</strong> (não árabe, embora o sistema métrico persa derive do árabe). A poesia persa clássica é <strong>quantitativa</strong>: sílabas são curtas, longas ou superlongas, e o metro é um padrão fixo dessas durações. O Masnavi usa o metro <strong>ramal</strong> (<code>fāʿilātun</code> repetido).</p>
+<p>Isso tem consequência musical direta e antiga: <strong>o padrão de sílabas longas e curtas já é o ritmo de uma canção</strong> — na música persa clássica, saber quando estender uma nota decorre do metro do texto. Nós adotamos exatamente essa ponte:</p>
+<table>
+<thead>
+<tr>
+<th>Símbolo aruz</th>
+<th>Sílaba</th>
+<th>Duração musical (4/4)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>–</code></td>
+<td>longa</td>
+<td>semínima (1.0)</td>
+</tr>
+<tr>
+<td><code>u</code></td>
+<td>curta</td>
+<td>colcheia (0.5)</td>
+</tr>
+<tr>
+<td><code>=</code></td>
+<td>superlonga</td>
+<td>semínima pontuada (1.5)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Exemplo — abertura do Masnavi</strong> (<code>bešnaw az nay čun hekāyat mī-konad</code>):</p>
+<pre><code>beš  naw  az  nay  čun  he  kā  yat  mī  ko  nad
+ –    u   –   –    –    u   –   –    –   u   –
+1.0  0.5 1.0 1.0  1.0  0.5 1.0 1.0  1.0 0.5 1.0   (quarters)
+</code></pre>
+<p>Regra aplicada: a última sílaba do hemistíquio conta sempre como longa.</p>
+<p><em>Fontes de escansão:</em> Wikipedia "Persian metres"; persianlanguageonline.com (aruz, parte 1); ScienceDirect "Prosody recognition in Persian poetry" (o padrão longo/curto forma o ritmo da canção). Escansões no corpus são de protótipo; conferir com edição crítica (Foruzanfar) antes do uso final.</p>
+<hr />
+<h2>3. Explorações rítmicas previstas</h2>
+<p>O aruz dá o material; a co-produção o explora. Operações rítmicas já suportadas ou planejadas:</p>
+<ul>
+<li><strong>Derivação direta</strong> — durações 1:1 do metro (base, implementada).</li>
+<li><strong>Inversão métrica</strong> — trocar longas↔curtas para gerar uma variação-espelho (a mesma frase "ao contrário", útil para pontes e contracantos).</li>
+<li><strong>Aumentação / diminuição</strong> — multiplicar todas as durações (×2 para clímax lento, ÷2 para transe).</li>
+<li><strong>Deslocamento (síncope)</strong> — deslocar o padrão contra o tempo forte, o "suingue" que aproxima do partido-alto brasileiro.</li>
+<li><strong>Sobreposição</strong> — o mesmo metro em duas vozes defasadas (hoquetus), evocando o coro dervixe.</li>
+</ul>
+<p>Cada operação é uma função pura sobre a lista de durações do aruz — e cada uma preserva o rastro de auditoria.</p>
+<hr />
+<h2>4. Colorido Clube da Esquina</h2>
+<p>A cor é dada por escolhas harmônicas e de arranjo, não por citação (linguagem estética não se protege):</p>
+<ul>
+<li><strong>Modos</strong>: dórico (menor com 6ª maior, o tom mineiro), lídio (brilho), mixolídio, eólio.</li>
+<li><strong>Tensões</strong>: acordes maj7, 9, 11/13; baixos que descem por graus como assinatura.</li>
+<li><strong>Métrica que respira</strong>: 6/8, 3/4, 4/4 suingado, 7/8.</li>
+<li><strong>Timbres</strong>: piano e violão em diálogo de registro (um agudo/rítmico, outro grave/sustentado, trocando por seção), agbê, vozes em terças.</li>
+</ul>
+<hr />
+<h2>5. Arquitetura</h2>
+<pre><code>diva-repo/
+├── data/aruz_corpus.json     # versos de Rumi escaneados (a FONTE do ritmo)
+├── engine/generative.py      # motor: aruz -&gt; ritmo -&gt; melodia modal + auditoria
+├── app/server.py             # servidor local (stdlib), API do motor
+├── app/index.html            # interface de co-produção
+├── tests/                    # garantia de auditabilidade (5 testes)
+├── docs/PROCESSO_INTERFACE.md# desenho do processo da interface
+├── handout/HANDOUT.md        # este documento
+└── README.md
+</code></pre>
+<p><strong>Fluxo de dados:</strong> <code>corpus (aruz)</code> → <code>durar_por_aruz()</code> → <code>gerar_melodia(modo, entropia)</code> → <code>relatorio_auditoria()</code> → interface/partitura. Semente textual fixa ⇒ resultado reprodutível (requisito de auditoria).</p>
+<hr />
+<h2>6. Auditabilidade — o compromisso central</h2>
+<p>Toda saída do motor vem acompanhada de um <strong>relatório de auditoria</strong> que responde, para cada nota: <em>qual sílaba persa a originou, qual símbolo métrico, e por que ela dura o que dura</em>. Os testes em <code>tests/</code> verificam três invariantes:</p>
+<ol>
+<li><strong>duração deriva do aruz</strong> (nunca inventada);</li>
+<li><strong>alinhamento sílaba↔nota</strong> (uma sílaba, uma nota; melisma só explícito);</li>
+<li><strong>reprodutibilidade</strong> (mesma semente, mesma melodia).</li>
+</ol>
+<p>Isso torna o processo inspecionável por um músico, um revisor ou o próprio autor — e distingue o projeto de geradores opacos.</p>
+<hr />
+<h2>7. Direitos autorais</h2>
+<ul>
+<li><strong>Texto persa de Rumi</strong>: domínio público (morte em 1273).</li>
+<li><strong>Escansão métrica</strong>: fato linguístico, não protegível.</li>
+<li><strong>Traduções de referência</strong>: usar apenas Nicholson (†1945) e Whinfield (†1922), em domínio público. <strong>Não</strong> partir das versões de Coleman Barks (protegidas), nem de Arberry (protegido até ~2040).</li>
+<li><strong>Letra em português</strong>: recriação própria, obra derivada original.</li>
+<li><strong>Música</strong>: melodia (ritmo do aruz + alturas modais), harmonia e arranjo, 100% originais.</li>
+</ul>
+<p><em>Não é parecer jurídico. Uso comercial (fonograma, sincronização) pede validação de advogado de direito autoral.</em></p>
+<hr />
+<h2>8. Roteiro (do repositório ao disco)</h2>
+<ol>
+<li><strong>MVP local</strong> (este repositório): motor + app + auditoria + 3 versos escaneados.</li>
+<li><strong>Ampliar o corpus</strong>: mais ghazais escaneados e conferidos (Foruzanfar).</li>
+<li><strong>Operações rítmicas</strong>: implementar inversão, aumentação, síncope, hoquetus como funções auditáveis.</li>
+<li><strong>Co-produção de letra</strong>: editor que valida sílaba↔duração em tempo real e sugere elisões.</li>
+<li><strong>Arranjo</strong>: exportar partitura (LilyPond) e maquete (fluidsynth) por canção.</li>
+<li><strong>Sessão</strong>: gravar com músicos as canções aprovadas; registrar atribuição.</li>
+</ol>
+<hr />
+<h2>9. Como rodar</h2>
+<pre><code class="language-bash">python3 app/server.py          # http://localhost:8000
+python3 tests/test_auditabilidade.py   # 5/5 esperado
+python3 engine/generative.py --verso masnavi_1 --modo dorico
+</code></pre>
+<p>Requisitos: Python 3.10+ (stdlib). Para partitura/áudio: <code>music21</code>, LilyPond, fluidsynth (opcionais, ver README).</p></body></html>

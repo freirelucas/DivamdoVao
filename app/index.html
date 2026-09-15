@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Divã do Vão — co-produção</title>
+<style>
+  :root{--bg:#12100c;--card:#1c1913;--ink:#efe8da;--dim:#b0a390;--gold:#d0a94b;--rust:#c06a3c;--line:#332d22;--longa:#d0a94b;--curta:#5c9ea0}
+  *{box-sizing:border-box} html{-webkit-text-size-adjust:100%}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:Georgia,serif;font-size:17px;line-height:1.5}
+  .wrap{max-width:820px;margin:0 auto;padding:20px 16px 90px}
+  h1{color:var(--gold);font-size:1.7rem;margin:.1em 0}
+  .tag{color:var(--rust);font-style:italic;margin:.2em 0 1.2em}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin:14px 0}
+  label{display:block;color:var(--dim);font-size:.8rem;text-transform:uppercase;letter-spacing:.5px;margin:.6em 0 .2em}
+  select,input[type=range],button,textarea{font-family:inherit;font-size:1rem}
+  select,textarea{width:100%;background:#0e0c08;color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:10px;min-height:44px}
+  textarea{min-height:70px}
+  button{background:var(--rust);color:#fff;border:none;border-radius:8px;padding:12px 16px;min-height:46px;cursor:pointer}
+  button:hover{background:var(--gold);color:#000}
+  .persa{font-size:1.8rem;direction:rtl;text-align:right;color:var(--gold);margin:.3em 0;line-height:1.8}
+  .scan{display:flex;flex-wrap:wrap;gap:4px;margin:.5em 0}
+  .syl{border:1px solid var(--line);border-radius:8px;padding:4px 8px;text-align:center;min-width:44px}
+  .syl .s{font-size:.9rem} .syl .m{font-size:1.1rem;font-weight:bold}
+  .syl.longa{border-color:var(--longa)} .syl.longa .m{color:var(--longa)}
+  .syl.curta{border-color:var(--curta)} .syl.curta .m{color:var(--curta)}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .row>*{flex:1 1 auto}
+  .glosa{color:var(--dim);font-style:italic}
+  .audit{font-family:'Courier New',monospace;font-size:.78rem;white-space:pre-wrap;color:var(--dim);
+    background:#0e0c08;border:1px solid var(--line);border-radius:8px;padding:10px;max-height:220px;overflow:auto}
+  .leg{display:flex;gap:14px;font-size:.8rem;color:var(--dim);margin:.4em 0}
+  .leg b{color:var(--longa)} .leg i{color:var(--curta);font-style:normal}
+  details summary{cursor:pointer;color:var(--gold);padding:8px 0}
+  .hint{color:var(--dim);font-size:.78rem;margin-top:6px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Divã do Vão</h1>
+  <p class="tag">Co-produção: da rítmica de Rumi (aruz persa) à canção Clube da Esquina</p>
+
+  <div class="card">
+    <label>Verso de Rumi (domínio público)</label>
+    <select id="verso"></select>
+    <div class="persa" id="persa"></div>
+    <div class="leg">Escansão do aruz: <b>— longa</b> · <i>u curta</i> · a duração da nota vem daqui</div>
+    <div class="scan" id="scan"></div>
+    <p class="glosa" id="glosa"></p>
+  </div>
+
+  <div class="card">
+    <div class="row">
+      <div>
+        <label>Modo (cor Clube da Esquina)</label>
+        <select id="modo">
+          <option value="dorico">Dórico (menor com 6ª maior — mineiro)</option>
+          <option value="eolio">Eólio (menor natural)</option>
+          <option value="lidio">Lídio (4ª aumentada — brilho)</option>
+          <option value="mixolidio">Mixolídio (dominante suave)</option>
+        </select>
+      </div>
+      <div>
+        <label>Entropia melódica: <span id="entv">0.4</span></label>
+        <input type="range" id="ent" min="0" max="1" step="0.05" value="0.4">
+      </div>
+    </div>
+    <div class="row" style="margin-top:12px">
+      <button id="gerar">Gerar melodia do aruz</button>
+      <button id="tocar" style="background:#2a2414;color:var(--gold);border:1px solid var(--line)">▶ Tocar</button>
+    </div>
+    <p class="hint">O ritmo é derivado das sílabas longas/curtas do persa. As alturas seguem o modo escolhido. Semente fixa: reprodutível.</p>
+  </div>
+
+  <div class="card">
+    <label>Tradução / letra em português (co-produção)</label>
+    <textarea id="letra" placeholder="Escreva aqui sua versão em português, sílaba a sílaba alinhada às notas. Ex.: Es-cu-ta o jun-co..."></textarea>
+    <p class="hint">Objetivo: casar as sílabas do português às durações do aruz. O painel de auditoria abaixo mostra quantas notas há e a duração de cada uma.</p>
+  </div>
+
+  <div class="card">
+    <details open>
+      <summary>Auditoria (por que a nota dura o que dura)</summary>
+      <div class="audit" id="audit">Gere uma melodia para ver a trilha de auditoria.</div>
+    </details>
+  </div>
+</div>
+
+<script>
+let CORPUS=null, ATUAL=null;
+const $=s=>document.querySelector(s);
+
+async function init(){
+  const r=await fetch('/api/corpus'); CORPUS=await r.json();
+  const sel=$('#verso');
+  CORPUS.versos.forEach(v=>{
+    const o=document.createElement('option'); o.value=v.id; o.textContent=v.obra; sel.appendChild(o);
+  });
+  sel.onchange=()=>mostrarVerso(sel.value);
+  mostrarVerso(CORPUS.versos[0].id);
+}
+function mostrarVerso(id){
+  const v=CORPUS.versos.find(x=>x.id===id); ATUAL=v;
+  $('#persa').textContent=v.persa;
+  $('#glosa').textContent='glosa: '+v.glosa_pt+'  ·  imagem: '+v.imagem;
+  const scan=$('#scan'); scan.innerHTML='';
+  v.silabas.forEach((s,i)=>{
+    const m=v.escansao[i], longa=(m==='–'||m==='=');
+    const d=document.createElement('div');
+    d.className='syl '+(longa?'longa':'curta');
+    d.innerHTML=`<div class="s">${s}</div><div class="m">${m==='–'?'—':(m==='='?'=':'u')}</div>`;
+    scan.appendChild(d);
+  });
+}
+$('#ent').oninput=e=>$('#entv').textContent=e.target.value;
+
+let ULTIMA=null;
+async function gerar(){
+  const body={verso_id:ATUAL.id, modo:$('#modo').value, entropia:parseFloat($('#ent').value), semente:'diva'};
+  const r=await fetch('/api/gerar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const d=await r.json(); ULTIMA=d;
+  const a=d.auditoria;
+  let txt=`verso: ${a.verso_id}  (${a.obra})\nmetro: ${a.metro} · modo: ${d.modo}\nregra: ${a.regra}\n`;
+  txt+=`sílabas: ${a.conferencia.n_silabas} · notas: ${a.conferencia.n_notas} · alinhado: ${a.conferencia.alinhado}\n\n`;
+  txt+='sílaba   aruz  dur   nota\n';
+  d.notas.forEach(n=>{ txt+=`${n.silaba.padEnd(8)} ${n.aruz==='–'?'—':n.aruz}     ${n.dur}   ${n.nome}\n`; });
+  $('#audit').textContent=txt;
+}
+$('#gerar').onclick=gerar;
+
+// síntese simples (Web Audio) — apenas guia, não gravação
+let ctx;
+function tocar(){
+  if(!ULTIMA){return;}
+  ctx=ctx||new (window.AudioContext||window.webkitAudioContext)();
+  const bpm=88, spb=60/bpm, t0=ctx.currentTime+0.08; let t=t0;
+  ULTIMA.notas.forEach(n=>{
+    const dur=n.dur*spb, f=440*Math.pow(2,(n.midi-69)/12);
+    const o=ctx.createOscillator(), g=ctx.createGain();
+    o.type='triangle'; o.frequency.value=f;
+    g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(0.2,t+0.02);
+    g.gain.exponentialRampToValueAtTime(0.001,t+dur*0.95);
+    o.connect(g).connect(ctx.destination); o.start(t); o.stop(t+dur);
+    t+=dur;
+  });
+}
+$('#tocar').onclick=tocar;
+init();
+</script>
+</body>
+</html>

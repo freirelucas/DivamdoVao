@@ -1,0 +1,3 @@
+# Básico (app + motor + testes): apenas a biblioteca padrão do Python 3.10+.
+# Opcionais, para exportar partitura e áudio:
+music21>=9.1

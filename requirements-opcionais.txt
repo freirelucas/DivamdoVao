@@ -1,0 +1,4 @@
+# Ferramentas de sistema (instalar via apt/brew, não pip):
+#   lilypond      -> gravação de partitura em PDF
+#   fluidsynth    -> síntese de áudio a partir de MIDI
+#   ffmpeg        -> conversão de áudio (WAV -> MP3)

@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+engine/saida/
+*.wav
+*.mid
+*.pdf
+.DS_Store
+.venv/

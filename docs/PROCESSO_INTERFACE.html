@@ -1,0 +1,164 @@
+<!DOCTYPE html><html lang=pt-BR><head><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><title>Processo da Interface — Divã do Vão</title><style>
+body{font-family:Georgia,serif;max-width:820px;margin:0 auto;padding:24px 18px 80px;
+background:#12100c;color:#efe8da;font-size:17px;line-height:1.6}
+h1,h2,h3{color:#d0a94b} h1{border-bottom:2px solid #332d22;padding-bottom:.2em}
+h2{border-bottom:1px solid #332d22;padding-bottom:.2em;margin-top:1.8em}
+code,pre{background:#0e0c08;color:#d0a94b;border:1px solid #332d22;border-radius:6px}
+code{padding:1px 5px;font-size:.9em} pre{padding:12px;overflow-x:auto;font-size:.82rem;color:#b0a390}
+table{border-collapse:collapse;width:100%;font-size:.9rem} th,td{border:1px solid #332d22;padding:7px 10px;text-align:left}
+th{color:#c06a3c} a{color:#c06a3c} blockquote{border-left:3px solid #c06a3c;padding-left:14px;color:#b0a390;font-style:italic}
+em{color:#b0a390}
+</style></head><body><h1>Processo de desenvolvimento da interface — co-produção humano × máquina</h1>
+<p>Escopo declarado: uma interface onde o humano parte da rítmica de Rumi (aruz),
+gera material musical, <strong>traduz para o português em interação</strong>, e explora
+estruturas rítmicas (derivação, inversão, deslocamento), tudo com colorido
+Clube da Esquina e <strong>auditabilidade</strong> visível em tela.</p>
+<hr />
+<h2>1. Princípios de design</h2>
+<ol>
+<li><strong>A fonte é sagrada e visível.</strong> O verso persa e sua escansão ficam sempre à vista; nada de ritmo "mágico".</li>
+<li><strong>Uma sílaba, uma nota.</strong> A tela reforça a disciplina prosódica; melisma é exceção marcada.</li>
+<li><strong>O humano decide, a máquina propõe.</strong> O motor gera opções; o autor aprova, ajusta ou rejeita.</li>
+<li><strong>Auditoria em primeiro plano.</strong> O painel "por que a nota dura o que dura" é parte da interface, não um log escondido.</li>
+<li><strong>Leve.</strong> HTML/JS puro, sem dependências; roda local em máquina modesta.</li>
+</ol>
+<hr />
+<h2>2. Papéis</h2>
+<ul>
+<li><strong>Autor/curador</strong> (você): escolhe versos, modos, aprova a letra.</li>
+<li><strong>Usuário co-produtor</strong>: traduz e ajusta sílabas em diálogo.</li>
+<li><strong>Motor generativo</strong>: deriva ritmo do aruz, propõe alturas modais, devolve auditoria.</li>
+</ul>
+<hr />
+<h2>3. Fluxo de interação (loop de co-produção)</h2>
+<pre><code>   ┌─────────────────────────────────────────────────────────────┐
+   │  A. SELECIONAR VERSO                                          │
+   │     mostra: persa (RTL) + escansão colorida + glosa + imagem  │
+   └───────────────┬─────────────────────────────────────────────┘
+                   ▼
+   ┌─────────────────────────────────────────────────────────────┐
+   │  B. PARAMETRIZAR                                              │
+   │     modo (dórico/lídio/…) · entropia melódica · (semente)     │
+   └───────────────┬─────────────────────────────────────────────┘
+                   ▼
+   ┌─────────────────────────────────────────────────────────────┐
+   │  C. GERAR  →  motor deriva ritmo do aruz, sorteia alturas     │
+   │     devolve: notas + RELATÓRIO DE AUDITORIA                   │
+   └───────────────┬─────────────────────────────────────────────┘
+                   ▼
+   ┌─────────────────────────────────────────────────────────────┐
+   │  D. OUVIR (síntese-guia Web Audio)                           │
+   └───────────────┬─────────────────────────────────────────────┘
+                   ▼
+   ┌─────────────────────────────────────────────────────────────┐
+   │  E. TRADUZIR / ESCREVER LETRA  (co-produção)                  │
+   │     o autor digita PT sílaba a sílaba;                        │
+   │     a tela confere nº de sílabas × nº de notas (aruz)         │
+   └───────────────┬─────────────────────────────────────────────┘
+                   ▼
+             ┌─────────────┐   não casa    ┌───────────────────────┐
+             │ F. VALIDAR  │──────────────▶│ ajustar letra OU       │
+             │ sílaba↔nota │               │ aplicar operação       │
+             └──────┬──────┘               │ rítmica (inversão,     │
+                    │ casa                 │ aumentação, síncope)   │
+                    ▼                      └───────────┬───────────┘
+   ┌─────────────────────────────────────────────────┘             │
+   │  G. APROVAR SEÇÃO  → rotula A/B/C, guarda no projeto           │◀┘
+   └───────────────┬─────────────────────────────────────────────┘
+                   ▼
+   ┌─────────────────────────────────────────────────────────────┐
+   │  H. EXPORTAR  → partitura (LilyPond) + maquete (fluidsynth)   │
+   └─────────────────────────────────────────────────────────────┘
+</code></pre>
+<p>O ciclo E→F→(ajuste)→E é o coração da co-produção: a pessoa negocia a tradução
+contra a métrica até o português "caber" no ritmo de Rumi.</p>
+<hr />
+<h2>4. Telas / componentes (estado atual e planejado)</h2>
+<table>
+<thead>
+<tr>
+<th>Componente</th>
+<th>Função</th>
+<th>Estado</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Seletor de verso</td>
+<td>Escolhe o verso do corpus</td>
+<td><strong>feito</strong></td>
+</tr>
+<tr>
+<td>Escansão colorida</td>
+<td>Mostra longa/curta por sílaba</td>
+<td><strong>feito</strong></td>
+</tr>
+<tr>
+<td>Parâmetros (modo, entropia)</td>
+<td>Controla a geração</td>
+<td><strong>feito</strong></td>
+</tr>
+<tr>
+<td>Botão Gerar / Tocar</td>
+<td>Chama o motor / sintetiza guia</td>
+<td><strong>feito</strong></td>
+</tr>
+<tr>
+<td>Painel de auditoria</td>
+<td>Liga nota↔sílaba↔duração</td>
+<td><strong>feito</strong></td>
+</tr>
+<tr>
+<td>Editor de letra</td>
+<td>Digitação em PT</td>
+<td><strong>feito (livre)</strong></td>
+</tr>
+<tr>
+<td>Validador sílaba↔nota em tempo real</td>
+<td>Conta e sinaliza descasamento por sílaba</td>
+<td><em>planejado</em></td>
+</tr>
+<tr>
+<td>Operações rítmicas</td>
+<td>Inversão / aumentação / síncope com prévia</td>
+<td><em>planejado</em></td>
+</tr>
+<tr>
+<td>Biblioteca de seções A/B/C</td>
+<td>Guarda e reordena seções aprovadas</td>
+<td><em>planejado</em></td>
+</tr>
+<tr>
+<td>Exportador</td>
+<td>Gera .musicxml / .mid / .pdf</td>
+<td><em>planejado (via engine offline)</em></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>5. Contrato da API (já implementado)</h2>
+<pre><code>GET  /api/corpus
+     → { versos:[{id,obra,persa,silabas,escansao,glosa_pt,imagem}], metros:{…} }
+
+POST /api/gerar   { verso_id, modo, entropia, semente }
+     → { notas:[{midi,nome,dur,silaba,aruz}], auditoria:{…}, tonica, modo }
+</code></pre>
+<p>A auditoria retornada inclui <code>conferencia.alinhado</code> (booleano) — a interface
+usa isso para o semáforo de validação.</p>
+<hr />
+<h2>6. Roadmap da interface</h2>
+<ol>
+<li><strong>v0.1 (agora)</strong>: gerar + ouvir + auditar + escrever letra livre.</li>
+<li><strong>v0.2</strong>: validador sílaba↔nota em tempo real (semáforo por sílaba).</li>
+<li><strong>v0.3</strong>: operações rítmicas com prévia sonora e trilha de auditoria.</li>
+<li><strong>v0.4</strong>: biblioteca de seções A/B/C e montagem da forma da canção.</li>
+<li><strong>v0.5</strong>: exportação integrada (partitura + maquete) a partir da interface.</li>
+</ol>
+<hr />
+<h2>7. Critérios de aceite (o que faz a interface "pronta")</h2>
+<ul>
+<li>Nenhuma duração aparece sem origem no aruz (verificável no painel).</li>
+<li>O autor consegue traduzir um verso e ver, sem sair da tela, se as sílabas casam.</li>
+<li>Toda seção aprovada guarda: verso-fonte, modo, letra PT, e a auditoria.</li>
+<li>Roda offline em máquina modesta, sem instalar dependências para o básico.</li>
+</ul></body></html>
