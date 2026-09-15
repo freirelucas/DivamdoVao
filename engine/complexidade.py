@@ -573,14 +573,24 @@ def medir_encaixe(frase: Frase, verso: dict, metros: dict,
 
 
 def relatorio(frase: Frase, verso: dict, metros: dict, ambito: int = 9,
-              letra: str | list[str] | None = None) -> dict:
-    """O relatório completo: o que descreve e o que ordena."""
+              letra: str | list[str] | None = None,
+              compasso: float | None = None) -> dict:
+    """O relatório completo: o que descreve e o que ordena.
+
+    Sem `compasso` explícito, as métricas são medidas no compasso que o pé do
+    metro pede — medir groove em 4/4 um material cujo pé dura 3.5 quarters
+    reportaria um número que diz mais sobre a barra escolhida do que sobre a
+    música.
+    """
+    natural = compasso_natural(verso, metros)
+    compasso = compasso or natural.get("compasso_sugerido") or 4.0
     return {
+        "compasso_medido": compasso,
         "decomposicao": decompor(frase, verso, ambito),
-        "metricas_mir": metricas_mir(frase),
+        "metricas_mir": metricas_mir(frase, compasso),
         "encaixe": medir_encaixe(frase, verso, metros, letra),
         "modelo_nulo": periodicidade_vs_acaso(verso),
-        "compasso_natural": compasso_natural(verso, metros),
+        "compasso_natural": natural,
         "melhor_compasso": melhor_compasso(frase),
         "vetor_duracao": [round(x, 6) for x in vetor_duracao(frase)],
     }

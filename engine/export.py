@@ -70,6 +70,25 @@ def tipo_musical(dur: float) -> tuple[str, int]:
     return TIPOS[chave]
 
 
+def assinatura_de_compasso(quarters: float) -> tuple[int, int]:
+    """Converte a duração do compasso na fórmula (numerador, denominador).
+
+    Necessário porque o compasso deixou de ser sempre 4/4: o pé do ramal dura
+    3.5 quarters, que é 7/8. A conversão ingênua — int(3.5) sobre denominador
+    4 — escreveria 3/4 numa partitura de 7/8, e o erro seguiria silencioso até
+    a estante do músico.
+    """
+    alvo = round(quarters, 6)
+    if alvo <= 0:
+        raise ValueError(f"compasso deve ser positivo, recebi {quarters}")
+    for denominador, fator in ((4, 1), (8, 2), (16, 4)):
+        valor = alvo * fator
+        if abs(valor - round(valor)) < 1e-9:
+            return int(round(valor)), denominador
+    raise ValueError(
+        f"compasso de {quarters} quarters não tem fórmula exata até semicolcheia")
+
+
 def figuras(dur: float) -> list[float]:
     """Decompõe uma duração na soma de figuras que existem na notação.
 
@@ -213,9 +232,10 @@ def para_musicxml(frase: Frase, titulo: str, compasso: float = 4.0,
             attrs = ET.SubElement(m, "attributes")
             ET.SubElement(attrs, "divisions").text = str(DIVISOES)
             ET.SubElement(ET.SubElement(attrs, "key"), "fifths").text = "0"
+            batidas, figura = assinatura_de_compasso(compasso)
             tempo = ET.SubElement(attrs, "time")
-            ET.SubElement(tempo, "beats").text = str(int(compasso))
-            ET.SubElement(tempo, "beat-type").text = "4"
+            ET.SubElement(tempo, "beats").text = str(batidas)
+            ET.SubElement(tempo, "beat-type").text = str(figura)
             clave = ET.SubElement(attrs, "clef")
             ET.SubElement(clave, "sign").text = "G"
             ET.SubElement(clave, "line").text = "2"
@@ -287,7 +307,8 @@ def _vlq(n: int) -> bytes:
     return bytes(saida)
 
 
-def para_midi(frase: Frase, bpm: int = 88, velocidade: int = 80) -> bytes:
+def para_midi(frase: Frase, bpm: int = 88, velocidade: int = 80,
+              compasso: float = 4.0) -> bytes:
     """Gera um SMF tipo 0 com a melodia. 88 bpm é o andamento que a
     síntese-guia da interface usa, para que ouvir no app e ouvir o arquivo
     dêem a mesma coisa."""
@@ -296,7 +317,10 @@ def para_midi(frase: Frase, bpm: int = 88, velocidade: int = 80) -> bytes:
     eventos = bytearray()
     microseg = int(round(60_000_000 / bpm))
     eventos += _vlq(0) + b"\xFF\x51\x03" + microseg.to_bytes(3, "big")   # tempo
-    eventos += _vlq(0) + b"\xFF\x58\x04" + bytes([4, 2, 24, 8])          # 4/4
+    batidas, figura = assinatura_de_compasso(compasso)
+    # o denominador do SMF é potência de 2: 4 -> 2, 8 -> 3, 16 -> 4
+    expoente = {4: 2, 8: 3, 16: 4}[figura]
+    eventos += _vlq(0) + b"\xFF\x58\x04" + bytes([batidas, expoente, 24, 8])
 
     delta = int(round(frase.anacruse * DIVISOES))
     for n in frase.notas:
@@ -338,7 +362,7 @@ def escrever(frase: Frase, relatorio: dict, destino: str | Path, nome: str,
         escritos.append(alvo)
     if "midi" in formatos:
         alvo = destino / f"{nome}.mid"
-        alvo.write_bytes(para_midi(frase))
+        alvo.write_bytes(para_midi(frase, compasso=compasso))
         escritos.append(alvo)
 
     alvo = destino / f"{nome}_auditoria.json"

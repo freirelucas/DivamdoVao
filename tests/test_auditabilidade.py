@@ -418,6 +418,45 @@ def test_midi_round_trip():
         assert ons == offs == len(frase.notas), modo
         assert abs(fim / DIVISOES - frase.duracao_total()) < 1e-9, modo
 
+def test_assinatura_de_compasso():
+    """A fórmula de compasso tem de sair certa para compasso não inteiro.
+
+    O pé do ramal dura 3.5 quarters = 7/8. A conversão ingênua (int(3.5) sobre
+    denominador 4) escreveria 3/4 numa partitura de 7/8, e o erro seguiria
+    silencioso até a estante do músico.
+    """
+    from engine.export import assinatura_de_compasso
+    assert assinatura_de_compasso(3.5) == (7, 8)
+    assert assinatura_de_compasso(4.0) == (4, 4)
+    assert assinatura_de_compasso(3.0) == (3, 4)
+    assert assinatura_de_compasso(1.5) == (3, 8)
+    assert assinatura_de_compasso(2.5) == (5, 8)
+    for invalido in (0, -1):
+        try:
+            assinatura_de_compasso(invalido)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError(f"compasso {invalido} deveria ser recusado")
+
+def test_musicxml_escreve_o_compasso_certo():
+    """A partitura em 7/8 declara 7/8, e os compassos fecham em 3.5 quarters."""
+    frase = gerar_melodia(_verso("masnavi_1"), modo="dorico")
+    raiz = ET.fromstring(para_musicxml(frase, "t", compasso=3.5))
+    assert raiz.findtext(".//time/beats") == "7"
+    assert raiz.findtext(".//time/beat-type") == "8"
+    for m in raiz.findall(".//measure"):
+        soma = sum(int(n.findtext("duration")) for n in m.findall("note")) / DIVISOES
+        assert abs(soma - 3.5) < 1e-9, soma
+
+def test_midi_escreve_o_compasso_certo():
+    """O evento de fórmula de compasso do SMF traz 7 e o expoente 3 (2**3=8)."""
+    frase = gerar_melodia(_verso("masnavi_1"), modo="dorico")
+    dados = para_midi(frase, compasso=3.5)
+    i = dados.find(b"\xFF\x58\x04")
+    assert i > 0, "evento de fórmula de compasso ausente"
+    assert dados[i + 3] == 7 and dados[i + 4] == 3, (dados[i + 3], dados[i + 4])
+
 def test_export_recusa_duracao_impossivel():
     """Duração sem figura exata falha alto em vez de virar partitura errada."""
     try:

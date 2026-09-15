@@ -403,6 +403,15 @@ if __name__ == "__main__":
     ap.add_argument("--semente", default="diva")
     ap.add_argument("--export", default="",
                     help="formatos a exportar, separados por vírgula: musicxml,midi")
+    ap.add_argument("--compasso", type=float, default=None,
+                    help="compasso em quarterLength (3.5 = 7/8, 4.0 = 4/4). "
+                         "Por padrão usa o que o pé do metro pede — o ramal "
+                         "pede 3.5, e em 4/4 o pé desliza contra a barra")
+    ap.add_argument("--complexidade", action="store_true",
+                    help="mede complexidade, encaixe e compasso natural")
+    ap.add_argument("--letra", default="",
+                    help="letra em português, sílabas separadas por hífen, "
+                         "para medir o ajuste prosódico contra o aruz")
     ap.add_argument("--operacao", default="", choices=["", "inversao", "aumentacao",
                                                       "diminuicao", "deslocamento"],
                     help="operação rítmica a aplicar (ver engine/ritmo.py)")
@@ -418,11 +427,23 @@ if __name__ == "__main__":
         frase = OPERACOES[args.operacao](frase)
     rel = relatorio_auditoria(frase, verso, corpus["metros"])
 
+    # o compasso que o pé do metro pede, salvo escolha explícita
+    from engine.complexidade import compasso_natural
+    natural = compasso_natural(verso, corpus["metros"])
+    compasso = args.compasso or natural.get("compasso_sugerido") or 4.0
+
+    if args.complexidade or args.letra:
+        from engine.complexidade import relatorio as relatorio_complexidade
+        rel["complexidade"] = relatorio_complexidade(
+            frase, verso, corpus["metros"], ambito=args.ambito,
+            letra=args.letra or None, compasso=compasso)
+
     if args.export:
         from engine.export import escrever
         formatos = [f.strip() for f in args.export.split(",") if f.strip()]
         for alvo in escrever(frase, rel, args.out, args.verso, formatos,
-                             titulo=verso.get("obra", args.verso)):
+                             titulo=verso.get("obra", args.verso),
+                             compasso=compasso):
             print("escrito:", alvo)
     else:
         Path(args.out).mkdir(parents=True, exist_ok=True)
@@ -437,3 +458,35 @@ if __name__ == "__main__":
     print(f"Metro {cm['metro']} confere com a escansão:", cm["conforme"])
     for d in cm["divergencias"]:
         print("  divergência:", d)
+    from engine.export import assinatura_de_compasso
+    batidas, figura = assinatura_de_compasso(compasso)
+    print(f"Compasso: {batidas}/{figura} ({compasso} quarters)"
+          + (f" — o pé do metro pede {natural['compasso_sugerido']}"
+             if natural.get("compasso_sugerido") else ""))
+
+    if "complexidade" in rel:
+        cx = rel["complexidade"]
+        d = cx["decomposicao"]
+        print(f"\nCOMPLEXIDADE")
+        print(f"  de Rumi : {d['bits_de_rumi']:7.2f} bits   "
+              f"({d['fracao_da_fonte']*100:.1f}% da canção)")
+        print(f"  do acaso: {d['bits_de_acaso']:7.2f} bits   "
+              f"({d['melodias_no_espaco']:,} melodias neste espaço)")
+        print(f"  {d['aviso']}")
+        m = cx["metricas_mir"]
+        print(f"  entropia de altura {m['entropia_de_altura']} · "
+              f"consistência modal {m['consistencia_modal']} · "
+              f"groove {m['consistencia_de_groove']}")
+        mc = cx["melhor_compasso"]
+        print(f"  groove por compasso: {mc['escores']} → melhor {mc['melhor']}")
+        print(f"\nENCAIXE (o que ordena candidatas)")
+        for nome, bloco in cx["encaixe"].items():
+            if bloco.get("aplicavel") is False:
+                print(f"  {nome}: não aplicável — {bloco.get('motivo', '')}")
+                continue
+            valor = bloco.get("cantabilidade", bloco.get("aderencia",
+                                                          bloco.get("ajuste")))
+            print(f"  {nome}: {valor}   (ordena {bloco['ordena']})")
+            for choque in bloco.get("choques", []):
+                print(f"     choque: tônica '{choque['silaba']}' em sílaba "
+                      f"curta do aruz (dur {choque['dur']})")

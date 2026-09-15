@@ -22,7 +22,8 @@ Endpoints:
     GET  /                      -> interface (app/index.html)
     GET  /api/corpus            -> lista de versos escaneados + conferência do metro
     POST /api/gerar             -> {verso_id, modo, entropia, ambito, tonica,
-                                    semente, operacao} => melodia + auditoria
+                                    semente, operacao, letra, compasso}
+                                => melodia + auditoria + complexidade
 
 Erros sempre voltam como JSON com status HTTP adequado. Antes, uma entrada
 inválida (modo inexistente, entropia não numérica, JSON malformado) derrubava
@@ -38,6 +39,8 @@ sys.path.insert(0, str(RAIZ))
 from engine.generative import (carregar_corpus, gerar_melodia,
                                relatorio_auditoria, conferir_metro, MODOS)
 from engine.ritmo import OPERACOES, conferir_rastro
+from engine.complexidade import relatorio as relatorio_complexidade, compasso_natural
+from engine.export import assinatura_de_compasso
 
 CORPUS = carregar_corpus(RAIZ / "data/aruz_corpus.json")
 LIMITE_CORPO = 64 * 1024        # o corpo do POST é um punhado de parâmetros
@@ -139,7 +142,23 @@ class Handler(BaseHTTPRequestHandler):
             if operacao:
                 frase = OPERACOES[operacao](frase)
 
+            # o compasso que o pé do metro pede, salvo escolha explícita: medir
+            # groove em 4/4 um material cujo pé dura 3.5 quarters diria mais
+            # sobre a barra escolhida do que sobre a música
+            natural = compasso_natural(verso, CORPUS["metros"])
+            compasso = (_numero(req, "compasso", 0, 0, 16) or
+                        natural.get("compasso_sugerido") or 4.0)
+            letra = req.get("letra") or None
+            if letra is not None and not isinstance(letra, str):
+                raise ErroCliente("'letra' deve ser texto com sílabas separadas "
+                                  "por hífen")
+
             rel = relatorio_auditoria(frase, verso, CORPUS["metros"])
+            rel["complexidade"] = relatorio_complexidade(
+                frase, verso, CORPUS["metros"],
+                ambito=_numero(req, "ambito", 9, 2, 36, inteiro=True),
+                letra=letra, compasso=compasso)
+            batidas, figura = assinatura_de_compasso(compasso)
             notas = [{
                 "midi": nt.midi, "nome": _midi_para_nome(nt.midi), "dur": nt.dur,
                 "dur_base": nt.dur_base, "silaba": nt.silaba, "aruz": nt.aruz,
@@ -151,6 +170,9 @@ class Handler(BaseHTTPRequestHandler):
                 "anacruse": frase.anacruse,
                 "operacoes": frase.operacoes,
                 "rastro": conferir_rastro(frase),
+                "compasso": {"quarters": compasso, "batidas": batidas,
+                             "figura": figura, "natural": natural},
+                "complexidade": rel["complexidade"],
             }, ensure_ascii=False))
         except ErroCliente as e:
             return self._erro(400, str(e))

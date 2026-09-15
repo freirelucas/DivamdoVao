@@ -44,6 +44,18 @@
   .semaforo{font-size:.9rem;margin:.5em 0 .2em}
   .semaforo.ok{color:var(--ok)} .semaforo.erro{color:var(--erro)}
   .divs{font-size:.76rem;color:var(--erro);margin:.2em 0 0;padding-left:1.1em}
+  .barra{display:flex;height:26px;border-radius:6px;overflow:hidden;border:1px solid var(--line);margin:.5em 0 .2em}
+  .barra .rumi{background:var(--gold);color:#000}
+  .barra .acaso{background:#2a2414;color:var(--dim)}
+  .barra span{display:flex;align-items:center;justify-content:center;font-size:.75rem;white-space:nowrap;overflow:hidden}
+  .medidas{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin:.6em 0}
+  .medida{background:#0e0c08;border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+  .medida .v{font-size:1.25rem;color:var(--gold)}
+  .medida .r{font-size:.7rem;color:var(--dim);text-transform:uppercase;letter-spacing:.4px}
+  .medida .o{font-size:.68rem;color:var(--curta)}
+  .compassos{display:flex;gap:6px;flex-wrap:wrap;margin:.4em 0}
+  .comp{border:1px solid var(--line);border-radius:6px;padding:4px 9px;font-size:.8rem;color:var(--dim)}
+  .comp.melhor{border-color:var(--gold);color:var(--gold)}
 </style>
 </head>
 <body>
@@ -107,6 +119,21 @@
     <div class="semaforo" id="semaforo">Gere uma melodia e escreva a letra para validar sílaba↔nota.</div>
     <p class="hint" id="dicaElisao"></p>
     <p class="hint">Cada sílaba do português ocupa uma nota. As caixas acima mostram, sob cada sílaba persa, a sílaba que você escreveu — verde quando casa, vermelho quando sobra.</p>
+  </div>
+
+  <div class="card">
+    <details open>
+      <summary>Complexidade — quanto desta canção é Rumi</summary>
+      <div id="cxvazio" class="hint">Gere uma melodia para medir.</div>
+      <div id="cx" hidden>
+        <div class="barra" id="barra"></div>
+        <p class="hint" id="cxespaco"></p>
+        <div class="medidas" id="medidas"></div>
+        <label>Compasso: o desenho rítmico se repete melhor em…</label>
+        <div class="compassos" id="compassos"></div>
+        <p class="hint" id="cxcompasso"></p>
+      </div>
+    </details>
   </div>
 
   <div class="card">
@@ -258,7 +285,8 @@ $('#letra').oninput=validarLetra;
 async function gerar(){
   const body={verso_id:ATUAL.id, modo:$('#modo').value,
               entropia:parseFloat($('#ent').value), ambito:parseInt($('#amb').value,10),
-              operacao:$('#operacao').value, semente:'diva'};
+              operacao:$('#operacao').value, semente:'diva',
+              letra:$('#letra').value || undefined};
   let d;
   try{
     d = await api('/api/gerar',{method:'POST',headers:{'Content-Type':'application/json'},
@@ -286,8 +314,53 @@ async function gerar(){
     txt+=`${n.silaba.padEnd(8)} ${n.aruz==='–'?'—':n.aruz}     ${String(n.dur_base).padStart(4)}${seta}${String(n.dur).padEnd(5)} ${String(n.grau_modal).padStart(2)}${n.oitava?'+'+n.oitava+'8ª':'   '}  ${n.nome}\n`;
   });
   $('#audit').textContent=txt;
+  desenharComplexidade(d);
   desenharScan();
   validarLetra();
+}
+
+/* O painel responde à pergunta que a decomposição de Gell-Mann e Lloyd torna
+   computável: que fração desta canção veio de Rumi e que fração veio do
+   sorteio. E mostra, ao lado, as medidas que de fato ordenam candidatas —
+   porque a fração é quase constante dentro de um mesmo verso e modo. */
+function desenharComplexidade(d){
+  const c=d.complexidade; if(!c){return;}
+  $('#cxvazio').hidden=true; $('#cx').hidden=false;
+  const dec=c.decomposicao, pct=Math.round(dec.fracao_da_fonte*100);
+  $('#barra').innerHTML =
+    `<span class="rumi" style="width:${pct}%">Rumi ${pct}%</span>`+
+    `<span class="acaso" style="width:${100-pct}%">acaso ${100-pct}%</span>`;
+  $('#cxespaco').textContent =
+    `${dec.bits_de_rumi} bits vêm da escansão de Rumi, ${dec.bits_de_acaso} bits do `+
+    `passeio melódico — ${dec.melodias_no_espaco.toLocaleString('pt-BR')} melodias `+
+    `distintas neste espaço. A fração é praticamente a mesma para todas elas: `+
+    `ela descreve, não escolhe.`;
+
+  const m=c.metricas_mir, e=c.encaixe;
+  const cartoes=[
+    ['entropia de altura', m.entropia_de_altura, ''],
+    ['consistência modal', m.consistencia_modal, ''],
+    ['groove', m.consistencia_de_groove, `em ${c.compasso_medido} quarters`],
+    ['cantabilidade', e.cantabilidade.cantabilidade, 'ordena melodias'],
+    ['aderência ao metro', e.aderencia_ao_metro.aderencia, 'ordena melodias'],
+  ];
+  if(e.ajuste_prosodico && e.ajuste_prosodico.aplicavel)
+    cartoes.push(['ajuste prosódico', e.ajuste_prosodico.ajuste, 'ordena letras']);
+  $('#medidas').innerHTML = cartoes.map(([r,v,o])=>
+    `<div class="medida"><div class="r">${r}</div><div class="v">${v===null?'—':v}</div>`+
+    `<div class="o">${o}</div></div>`).join('');
+
+  const mc=c.melhor_compasso;
+  $('#compassos').innerHTML = Object.entries(mc.escores).map(([q,v])=>
+    `<span class="comp${parseFloat(q)===mc.melhor?' melhor':''}">${q} → ${v}</span>`).join('');
+  const nat=c.compasso_natural;
+  let txtc = `O pé do metro dura ${nat.duracao_do_pe} quarters `+
+             `(${nat.em_colcheias} colcheias), e a busca empírica concorda: o desenho `+
+             `rítmico se repete melhor em ${mc.melhor}.`;
+  if(e.ajuste_prosodico && e.ajuste_prosodico.choques && e.ajuste_prosodico.choques.length)
+    txtc += ' Choque prosódico: '+e.ajuste_prosodico.choques
+      .map(x=>`tônica "${x.silaba}" em sílaba curta`).join(', ')+'.';
+  $('#cxcompasso').textContent = txtc;
 }
 $('#gerar').onclick=gerar;
 
