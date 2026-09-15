@@ -1,0 +1,29 @@
+name: testes de auditabilidade
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  auditabilidade:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # o projeto declara Python 3.10+ no README; a CI garante a afirmação
+        python: ["3.10", "3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Testes (só stdlib — nada a instalar)
+        run: python3 tests/test_auditabilidade.py
+      - name: Motor pela CLI, com exportação
+        run: |
+          python3 engine/generative.py --verso masnavi_1 --modo dorico \
+            --export musicxml,midi --out /tmp/saida
+          test -s /tmp/saida/masnavi_1.musicxml
+          test -s /tmp/saida/masnavi_1.mid
+          test -s /tmp/saida/masnavi_1_auditoria.json
