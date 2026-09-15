@@ -83,10 +83,12 @@ contra a métrica até o português "caber" no ritmo de Rumi.
 | Botão Gerar / Tocar | Chama o motor / sintetiza guia | **feito** |
 | Painel de auditoria | Liga nota↔sílaba↔duração | **feito** |
 | Editor de letra | Digitação em PT | **feito (livre)** |
-| Validador sílaba↔nota em tempo real | Conta e sinaliza descasamento por sílaba | *planejado* |
-| Operações rítmicas | Inversão / aumentação / síncope com prévia | *planejado* |
+| Validador sílaba↔nota em tempo real | Conta e sinaliza descasamento por sílaba, sugere elisão | **feito** |
+| Selo de escansão conferida | Mostra quando o metro não confere com a escansão | **feito** |
+| Operações rítmicas | Inversão / aumentação / diminuição / deslocamento | **feito** |
+| Painel de complexidade | Fração Rumi × acaso, medidas de encaixe, compasso natural | **feito** |
 | Biblioteca de seções A/B/C | Guarda e reordena seções aprovadas | *planejado* |
-| Exportador | Gera .musicxml / .mid / .pdf | *planejado (via engine offline)* |
+| Exportador | Gera .musicxml / .mid | **feito (CLI, só stdlib)**; .pdf *planejado* |
 
 ---
 
@@ -107,11 +109,12 @@ usa isso para o semáforo de validação.
 
 ## 6. Roadmap da interface
 
-1. **v0.1 (agora)**: gerar + ouvir + auditar + escrever letra livre.
-2. **v0.2**: validador sílaba↔nota em tempo real (semáforo por sílaba).
-3. **v0.3**: operações rítmicas com prévia sonora e trilha de auditoria.
+1. ~~**v0.1**: gerar + ouvir + auditar + escrever letra livre.~~ feito
+2. ~~**v0.2**: validador sílaba↔nota em tempo real (semáforo por sílaba).~~ feito
+3. ~~**v0.3**: operações rítmicas com trilha de auditoria.~~ feito — falta a prévia sonora de cada operação
 4. **v0.4**: biblioteca de seções A/B/C e montagem da forma da canção.
-5. **v0.5**: exportação integrada (partitura + maquete) a partir da interface.
+5. **v0.5**: exportação a partir da interface (a CLI já exporta MusicXML e MIDI).
+6. **v0.6**: usar as medidas de encaixe para propor candidatas ordenadas, em vez de o autor varrer o espaço à mão.
 
 ---
 

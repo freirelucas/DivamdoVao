@@ -20,6 +20,8 @@ jobs:
           python-version: ${{ matrix.python }}
       - name: Testes (só stdlib — nada a instalar)
         run: python3 tests/test_auditabilidade.py
+      - name: HTML em dia com os .md
+        run: python3 docs/gerar_html.py --conferir
       - name: Motor pela CLI, com exportação
         run: |
           python3 engine/generative.py --verso masnavi_1 --modo dorico \

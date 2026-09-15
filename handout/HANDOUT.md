@@ -98,6 +98,50 @@ Isso torna o processo inspecionável por um músico, um revisor ou o próprio au
 
 ---
 
+## 6-A. Complexidade: quanto desta canção é Rumi
+
+A partir do working group do Santa Fe Institute *Complexity and the Structure of Music*
+(2020), o projeto ganhou uma camada de medida — `engine/complexidade.py`, só stdlib.
+
+**A decomposição.** Pela complexidade efetiva de Gell-Mann e Lloyd, o conteúdo com
+significado de um sistema está na descrição comprimida das suas **regularidades**, não na
+sua parte aleatória. O Divã do Vão já é assim por arquitetura: a escansão vem de Rumi (a
+regularidade) e o passeio melódico vem de uma semente (o acaso). Medindo:
+
+| | |
+|---|---|
+| material de Rumi no corpus | 3 versos, 36 sílabas, **21 segundos** |
+| melodias distintas que o motor pode gerar (âmbito 9) | **11.818.152.720** |
+| tocadas em sequência | **3.229 anos** |
+| fração que vem da fonte | ~29% dos bits |
+
+**O limite da medida, dito com todas as letras.** Como o ritmo vem inteiro do aruz, todas
+as melodias do espaço compartilham as mesmas regularidades e diferem só no sorteio: têm
+complexidade efetiva praticamente idêntica. *A medida que melhor descreve o projeto é cega
+dentro dele.* Medido: 300 melodias do mesmo verso e modo dão **um único** valor de fração.
+
+Por isso há uma segunda família, de **encaixe**, e cada medida declara em que eixo ordena:
+cantabilidade e aderência ao metro ordenam melodias; o ajuste prosódico ordena letras (é
+constante entre melodias, porque compara a letra contra o aruz, que não varia). Filtrar não
+basta — cinco filtros de sanidade reprovam 9 de cada 10 melodias e ainda deixam 285 anos de
+música. Gerar é de graça; julgar é caro.
+
+**O achado: o compasso.** O pé do ramal (`fāʿilātun`, `–u––`) dura 1.0+0.5+1.0+1.0 = **3.5
+quarters** — sete colcheias, **7/8**. Em 4/4 o pé desliza contra a barra e a consistência de
+groove do Masnavi cai para 0.5625, *abaixo* do acaso (0.76); medida em 7/8 sobe para
+**1.0000**. A derivação (somar o pé) e a busca empírica (varrer compassos) concordam nos
+três versos.
+
+Isso não é detalhe técnico: a seção 4 acima já listava 7/8 entre as métricas que respiram do
+Clube da Esquina. **A métrica persa e a estética brasileira do projeto se encontram no mesmo
+compasso** — e a medida acha isso sozinha. O exportador passou a usá-lo por padrão.
+
+*Fontes:* working group do SFI (santafe.edu); Gell-Mann & Lloyd, complexidade efetiva;
+Buongiorno Nardelli, musicntwrk (vetor de duração, distância rítmica, redes); métricas
+simbólicas no padrão do muspy.
+
+---
+
 ## 7. Direitos autorais
 
 - **Texto persa de Rumi**: domínio público (morte em 1273).
@@ -121,9 +165,9 @@ cuja licença é escolha separada.
 
 1. **MVP local** (este repositório): motor + app + auditoria + 3 versos escaneados.
 2. **Ampliar o corpus**: mais ghazais escaneados e conferidos (Foruzanfar).
-3. **Operações rítmicas**: implementar inversão, aumentação, síncope, hoquetus como funções auditáveis.
-4. **Co-produção de letra**: editor que valida sílaba↔duração em tempo real e sugere elisões.
-5. **Arranjo**: exportar partitura (LilyPond) e maquete (fluidsynth) por canção.
+3. ~~**Operações rítmicas**~~: feito — inversão, aumentação, diminuição, deslocamento e hoquetus em `engine/ritmo.py`, cada uma preservando `dur_base`.
+4. ~~**Co-produção de letra**~~: feito — validador sílaba↔duração em tempo real, com sugestão de elisão e escore de ajuste prosódico.
+5. **Arranjo**: exportar partitura e maquete por canção — MusicXML e MIDI já saem só com a stdlib (`engine/export.py`); falta LilyPond/PDF e fluidsynth.
 6. **Sessão**: gravar com músicos as canções aprovadas; registrar atribuição.
 
 ---
