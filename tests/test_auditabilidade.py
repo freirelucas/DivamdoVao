@@ -33,6 +33,7 @@ from engine.generative import (carregar_corpus, gerar_melodia, conferir_metro,
                                graus_no_ambito, refletir, _passear,
                                DUR_ARUZ, MODOS)
 from engine import ritmo
+from engine import complexidade as cx
 from engine.export import barrar, figuras, para_musicxml, para_midi, DIVISOES
 
 CORPUS = carregar_corpus(RAIZ / "data/aruz_corpus.json")
@@ -435,6 +436,143 @@ def test_letra_com_contagem_errada_recusada():
         pass
     else:
         raise AssertionError("letra de 2 sílabas para 11 notas deveria falhar")
+
+
+# --------------------------------------------------------------------------
+# Complexidade e encaixe
+# --------------------------------------------------------------------------
+
+def test_bits_de_acaso_bate_com_a_contagem():
+    """log2 do espaço medido pelo módulo tem de bater com a contagem feita por
+    rota independente: 6.966.123 melodias para masnavi_1/dórico/âmbito 9."""
+    v = _verso("masnavi_1")
+    bits = cx.bits_de_acaso(v, "dorico", 9)
+    assert round(2 ** bits) == 6_966_123, round(2 ** bits)
+    assert cx.decompor(gerar_melodia(v, modo="dorico"), v)["melodias_no_espaco"] \
+        == 6_966_123
+
+def test_passos_em_sincronia_com_o_motor():
+    """A contagem do espaço só vale se os passos aqui forem os mesmos que
+    gerar_melodia sorteia. Trava a duplicação."""
+    fonte = Path(RAIZ / "engine/generative.py").read_text(encoding="utf-8")
+    assert "rng.choice([-2, -1, 1, 2])" in fonte, "passos da sílaba curta mudaram"
+    assert "rng.choice([-1, 0, 0, 1])" in fonte and "rng.choice([-3, -2, 2, 3])" in fonte, \
+        "passos da sílaba longa mudaram"
+    assert set(cx.PASSOS_POR_SIMBOLO["u"]) == {-2, -1, 1, 2}
+    assert set(cx.PASSOS_POR_SIMBOLO["–"]) == {-3, -2, -1, 0, 1, 2, 3}
+
+def test_decomposicao_e_cega_dentro_do_espaco():
+    """O achado que motiva as medidas de encaixe: a fração da fonte é a mesma
+    para melodias diferentes do mesmo verso e modo."""
+    v = _verso("masnavi_1")
+    fracoes = {cx.decompor(gerar_melodia(v, modo="dorico", semente=f"s{i}"), v)
+               ["fracao_da_fonte"] for i in range(50)}
+    assert len(fracoes) == 1, f"esperava constância, vi {fracoes}"
+
+def test_cantabilidade_ordena_melodias():
+    """E o contraponto: cantabilidade varia dentro do mesmo espaço."""
+    v = _verso("masnavi_1")
+    vals = {cx.cantabilidade(gerar_melodia(v, modo="dorico", semente=f"s{i}"))
+            ["cantabilidade"] for i in range(100)}
+    assert len(vals) > 3, f"cantabilidade deveria discriminar, vi {vals}"
+
+def test_ajuste_prosodico_ordena_letras():
+    """O ajuste prosódico separa letras, e aponta a sílaba do choque."""
+    v = _verso("masnavi_1")
+    f = gerar_melodia(v, modo="dorico")
+    bom = cx.ajuste_prosodico(f, "So-pra no jun-co e ele con-ta de ti")
+    pior = cx.ajuste_prosodico(f, "Es-cu-ta o jun-co con-tan-do a dor")
+    assert bom["aplicavel"] and pior["aplicavel"]
+    assert bom["ajuste"] > pior["ajuste"], (bom["ajuste"], pior["ajuste"])
+    assert pior["choques"] and pior["choques"][0]["silaba"] == "cu"
+
+def test_ajuste_prosodico_recusa_contagem_errada():
+    f = gerar_melodia(_verso("masnavi_1"), modo="dorico")
+    r = cx.ajuste_prosodico(f, "duas si-la-bas")
+    assert r["aplicavel"] is False and "notas" in r
+
+def test_tonicidade_do_portugues():
+    """A heurística de tonicidade acerta os casos da regra padrão."""
+    marcas = cx.indices_tonicos(cx.separar_silabas_pt(
+        "can-tou de-pois o a-mor as ca-sas lá-pis"))
+    silabas = [s for p in cx.separar_silabas_pt(
+        "can-tou de-pois o a-mor as ca-sas lá-pis") for s in p]
+    tonicas = {s for s, m in zip(silabas, marcas) if m}
+    assert {"tou", "pois", "mor", "ca", "lá"} <= tonicas, tonicas
+    assert "o" not in tonicas and "as" not in tonicas, "átonos não são tônicos"
+
+def test_distancia_ritmica_invariante_sob_aumentacao():
+    """O vetor de duração é de RAZÕES: aumentar ou diminuir não move a frase."""
+    base = gerar_melodia(_verso("masnavi_1"), modo="dorico")
+    assert cx.distancia_ritmica(base, ritmo.aumentacao(base, 2)) == 0.0
+    assert cx.distancia_ritmica(base, ritmo.diminuicao(base, 2)) == 0.0
+    assert cx.distancia_ritmica(base, ritmo.deslocamento(base, 0.5)) == 0.0
+    assert cx.distancia_ritmica(base, ritmo.inversao_metrica(base)) > 0.1
+
+def test_distancia_ritmica_recusa_incomparavel():
+    a = gerar_melodia(_verso("masnavi_1"))      # 11 notas
+    b = gerar_melodia(_verso("divan_2214"))     # 14 notas
+    try:
+        cx.distancia_ritmica(a, b)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("frases de comprimentos diferentes não são comparáveis")
+
+def test_rede_ritmica():
+    base = gerar_melodia(_verso("masnavi_1"), modo="dorico")
+    rede = cx.rede_ritmica({"base": base, "aumentada": ritmo.aumentacao(base, 2),
+                            "invertida": ritmo.inversao_metrica(base)}, limiar=0.05)
+    pares = {(a["de"], a["para"]) for a in rede["arestas"]}
+    assert ("base", "aumentada") in pares, "aumentação está a distância zero"
+    assert ("base", "invertida") not in pares, "inversão está longe"
+
+def test_compasso_natural_do_ramal_e_sete_oitavos():
+    """O pé do ramal dura 3.5 quarters — sete colcheias. Derivação e busca
+    empírica têm de concordar, e concordam."""
+    v = _verso("masnavi_1")
+    cn = cx.compasso_natural(v, CORPUS["metros"])
+    assert cn["compasso_sugerido"] == 3.5 and cn["em_colcheias"] == [7]
+    mc = cx.melhor_compasso(gerar_melodia(v, modo="dorico"))
+    assert mc["melhor"] == 3.5, mc["escores"]
+    assert mc["consistencia"] == 1.0, mc["escores"]
+    # e em 4/4, que é o padrão do exportador, o pé desliza contra a barra
+    assert mc["escores"][4.0] < mc["escores"][3.5]
+
+def test_modelo_nulo_avisa_falta_de_poder():
+    """O teste de periodicidade marca que não tem poder neste comprimento —
+    medido: divan_2214 dá p=0,07 na escansão atual e p=0,10 na proposta, e o
+    teste não decide entre as duas."""
+    r = cx.periodicidade_vs_acaso(_verso("masnavi_1"), periodo=4, n=500)
+    assert r["poder_suficiente"] is False and r["aviso"]
+    assert r["periodicidade_real"] == 1.0, "o pé do ramal se repete"
+    assert r["periodicidade_real"] > r["periodicidade_media_do_acaso"]
+
+def test_modelo_nulo_e_reprodutivel():
+    a = cx.periodicidade_vs_acaso(_verso("masnavi_1"), n=200, semente=7)
+    b = cx.periodicidade_vs_acaso(_verso("masnavi_1"), n=200, semente=7)
+    assert a == b, "semente fixa deve dar o mesmo resultado"
+
+def test_metricas_mir_coerentes_com_o_motor():
+    """A consistência modal tem de ser 1.0 — é a mesma garantia que os testes
+    de altura travam, vista por outro instrumento."""
+    for modo in MODOS:
+        for v in CORPUS["versos"]:
+            m = cx.metricas_mir(gerar_melodia(v, modo=modo))
+            assert m["consistencia_modal"] == 1.0, (v["id"], modo, m)
+            assert m["extensao_semitons"] <= 9
+            assert 0 <= m["consistencia_de_groove"] <= 1
+
+def test_relatorio_completo():
+    v = _verso("masnavi_1")
+    r = cx.relatorio(gerar_melodia(v, modo="dorico"), v, CORPUS["metros"],
+                     letra="Es-cu-ta o jun-co con-tan-do a dor")
+    for chave in ("decomposicao", "metricas_mir", "encaixe", "modelo_nulo",
+                  "compasso_natural", "melhor_compasso", "vetor_duracao"):
+        assert chave in r, chave
+    # cada medida de encaixe declara em que eixo ordena
+    for nome, bloco in r["encaixe"].items():
+        assert bloco.get("ordena") in ("melodias", "letras"), nome
 
 
 # --------------------------------------------------------------------------
