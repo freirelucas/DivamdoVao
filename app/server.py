@@ -75,6 +75,10 @@ class Handler(BaseHTTPRequestHandler):
             if self.path in ("/", "/index.html"):
                 html = (RAIZ / "app/index.html").read_text(encoding="utf-8")
                 return self._send(200, html, "text/html; charset=utf-8")
+            if self.path == "/favicon.ico":
+                # o navegador pede sempre; sem isto o console do app local
+                # nasce com um 404 que não é problema de ninguém
+                return self._send(204, b"", "image/x-icon")
             if self.path == "/api/corpus":
                 versos = []
                 for v in CORPUS["versos"]:

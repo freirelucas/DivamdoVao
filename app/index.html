@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Divã do Vão — co-produção</title>
 <style>
-  :root{--bg:#12100c;--card:#1c1913;--ink:#efe8da;--dim:#b0a390;--gold:#d0a94b;--rust:#c06a3c;--line:#332d22;--longa:#d0a94b;--curta:#5c9ea0}
+  :root{--bg:#12100c;--card:#1c1913;--ink:#efe8da;--dim:#b0a390;--gold:#d0a94b;--rust:#c06a3c;--line:#332d22;--longa:#d0a94b;--curta:#5c9ea0;--ok:#7aa85c;--erro:#c9553d}
   *{box-sizing:border-box} html{-webkit-text-size-adjust:100%}
   body{margin:0;background:var(--bg);color:var(--ink);font-family:Georgia,serif;font-size:17px;line-height:1.5}
   .wrap{max-width:820px;margin:0 auto;padding:20px 16px 90px}
@@ -24,15 +24,26 @@
   .syl .s{font-size:.9rem} .syl .m{font-size:1.1rem;font-weight:bold}
   .syl.longa{border-color:var(--longa)} .syl.longa .m{color:var(--longa)}
   .syl.curta{border-color:var(--curta)} .syl.curta .m{color:var(--curta)}
+  .syl .d{font-size:.68rem;color:var(--dim)}
+  .syl .pt{font-size:.85rem;margin-top:3px;padding-top:3px;border-top:1px dashed var(--line);min-height:1.3em}
+  .syl.casada .pt{color:var(--ok)} .syl.vazia .pt{color:var(--line)}
+  .syl.sobra{border-color:var(--erro)} .syl.sobra .pt,.syl.sobra .s{color:var(--erro)}
   .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
   .row>*{flex:1 1 auto}
   .glosa{color:var(--dim);font-style:italic}
   .audit{font-family:'Courier New',monospace;font-size:.78rem;white-space:pre-wrap;color:var(--dim);
-    background:#0e0c08;border:1px solid var(--line);border-radius:8px;padding:10px;max-height:220px;overflow:auto}
-  .leg{display:flex;gap:14px;font-size:.8rem;color:var(--dim);margin:.4em 0}
+    background:#0e0c08;border:1px solid var(--line);border-radius:8px;padding:10px;max-height:260px;overflow:auto}
+  .leg{display:flex;gap:14px;font-size:.8rem;color:var(--dim);margin:.4em 0;flex-wrap:wrap}
   .leg b{color:var(--longa)} .leg i{color:var(--curta);font-style:normal}
   details summary{cursor:pointer;color:var(--gold);padding:8px 0}
   .hint{color:var(--dim);font-size:.78rem;margin-top:6px}
+  .selo{display:inline-block;font-size:.72rem;text-transform:uppercase;letter-spacing:.5px;
+    border-radius:6px;padding:3px 8px;margin:.3em 0}
+  .selo.ok{color:var(--ok);border:1px solid var(--ok)}
+  .selo.aviso{color:var(--erro);border:1px solid var(--erro)}
+  .semaforo{font-size:.9rem;margin:.5em 0 .2em}
+  .semaforo.ok{color:var(--ok)} .semaforo.erro{color:var(--erro)}
+  .divs{font-size:.76rem;color:var(--erro);margin:.2em 0 0;padding-left:1.1em}
 </style>
 </head>
 <body>
@@ -44,6 +55,8 @@
     <label>Verso de Rumi (domínio público)</label>
     <select id="verso"></select>
     <div class="persa" id="persa"></div>
+    <div id="selo"></div>
+    <ul class="divs" id="divs"></ul>
     <div class="leg">Escansão do aruz: <b>— longa</b> · <i>u curta</i> · a duração da nota vem daqui</div>
     <div class="scan" id="scan"></div>
     <p class="glosa" id="glosa"></p>
@@ -61,8 +74,24 @@
         </select>
       </div>
       <div>
+        <label>Operação rítmica (HANDOUT §3)</label>
+        <select id="operacao">
+          <option value="">Derivação direta (1:1 do aruz)</option>
+          <option value="inversao">Inversão métrica (espelho)</option>
+          <option value="aumentacao">Aumentação ×2 (clímax lento)</option>
+          <option value="diminuicao">Diminuição ÷2 (transe)</option>
+          <option value="deslocamento">Deslocamento (síncope)</option>
+        </select>
+      </div>
+    </div>
+    <div class="row" style="margin-top:12px">
+      <div>
         <label>Entropia melódica: <span id="entv">0.4</span></label>
         <input type="range" id="ent" min="0" max="1" step="0.05" value="0.4">
+      </div>
+      <div>
+        <label>Âmbito (semitons): <span id="ambv">9</span></label>
+        <input type="range" id="amb" min="3" max="24" step="1" value="9">
       </div>
     </div>
     <div class="row" style="margin-top:12px">
@@ -74,8 +103,10 @@
 
   <div class="card">
     <label>Tradução / letra em português (co-produção)</label>
-    <textarea id="letra" placeholder="Escreva aqui sua versão em português, sílaba a sílaba alinhada às notas. Ex.: Es-cu-ta o jun-co..."></textarea>
-    <p class="hint">Objetivo: casar as sílabas do português às durações do aruz. O painel de auditoria abaixo mostra quantas notas há e a duração de cada uma.</p>
+    <textarea id="letra" placeholder="Separe as sílabas com hífen: Es-cu-ta o jun-co, co-mo con-ta"></textarea>
+    <div class="semaforo" id="semaforo">Gere uma melodia e escreva a letra para validar sílaba↔nota.</div>
+    <p class="hint" id="dicaElisao"></p>
+    <p class="hint">Cada sílaba do português ocupa uma nota. As caixas acima mostram, sob cada sílaba persa, a sílaba que você escreveu — verde quando casa, vermelho quando sobra.</p>
   </div>
 
   <div class="card">
@@ -87,11 +118,25 @@
 </div>
 
 <script>
-let CORPUS=null, ATUAL=null;
+let CORPUS=null, ATUAL=null, ULTIMA=null;
 const $=s=>document.querySelector(s);
+const VOGAIS='aeiouáàâãéêíóôõúü';
+
+async function api(url, opts){
+  const r = await fetch(url, opts);
+  let d = null;
+  try{ d = await r.json(); }catch(e){ throw new Error(`resposta ilegível (HTTP ${r.status})`); }
+  if(!r.ok) throw new Error(d && d.erro ? d.erro : `HTTP ${r.status}`);
+  return d;
+}
 
 async function init(){
-  const r=await fetch('/api/corpus'); CORPUS=await r.json();
+  try{
+    CORPUS = await api('/api/corpus');
+  }catch(e){
+    $('#semaforo').textContent = 'Falha ao carregar o corpus: '+e.message;
+    return;
+  }
   const sel=$('#verso');
   CORPUS.versos.forEach(v=>{
     const o=document.createElement('option'); o.value=v.id; o.textContent=v.obra; sel.appendChild(o);
@@ -99,41 +144,160 @@ async function init(){
   sel.onchange=()=>mostrarVerso(sel.value);
   mostrarVerso(CORPUS.versos[0].id);
 }
+
 function mostrarVerso(id){
-  const v=CORPUS.versos.find(x=>x.id===id); ATUAL=v;
+  const v=CORPUS.versos.find(x=>x.id===id); ATUAL=v; ULTIMA=null;
   $('#persa').textContent=v.persa;
   $('#glosa').textContent='glosa: '+v.glosa_pt+'  ·  imagem: '+v.imagem;
-  const scan=$('#scan'); scan.innerHTML='';
+
+  // Princípio 1 do processo: a fonte é sagrada e visível. Uma escansão que não
+  // confere com o metro declarado não pode aparecer com o mesmo peso das que
+  // conferem — o selo diz de qual das duas se trata.
+  const cm = v.conferencia_metro || {};
+  const selo = $('#selo'), divs = $('#divs');
+  divs.innerHTML='';
+  if(v.metro_conferido === false || cm.conforme === false){
+    selo.innerHTML = '<span class="selo aviso">escansão não conferida — '+v.metro+'</span>';
+    (cm.divergencias||[]).forEach(d=>{
+      const li=document.createElement('li'); li.textContent=d; divs.appendChild(li);
+    });
+  } else {
+    selo.innerHTML = '<span class="selo ok">escansão confere com '+v.metro+'</span>';
+  }
+  desenharScan();
+  validarLetra();
+}
+
+/* Desenha as caixas de sílaba: persa + símbolo do aruz + duração, e embaixo a
+   sílaba do português quando houver melodia gerada. É o mesmo componente que
+   já existia, agora servindo de régua para a co-produção. */
+function desenharScan(){
+  const v=ATUAL, scan=$('#scan'); scan.innerHTML='';
+  const pt = silabasPT();
+  const durs = ULTIMA ? ULTIMA.notas.map(n=>n.dur) : null;
   v.silabas.forEach((s,i)=>{
     const m=v.escansao[i], longa=(m==='–'||m==='=');
     const d=document.createElement('div');
-    d.className='syl '+(longa?'longa':'curta');
-    d.innerHTML=`<div class="s">${s}</div><div class="m">${m==='–'?'—':(m==='='?'=':'u')}</div>`;
+    let cls='syl '+(longa?'longa':'curta');
+    if(ULTIMA){ cls += pt[i]!==undefined ? ' casada' : ' vazia'; }
+    d.className=cls;
+    const dur = durs && durs[i]!==undefined ? durs[i] : null;
+    d.innerHTML = `<div class="s">${s}</div>`
+      + `<div class="m">${m==='–'?'—':(m==='='?'=':'u')}</div>`
+      + (dur!==null ? `<div class="d">${dur}</div>` : '')
+      + (ULTIMA ? `<div class="pt">${pt[i]!==undefined?pt[i]:'·'}</div>` : '');
     scan.appendChild(d);
   });
+  // sílabas do português que não têm nota: sobra, marcada em vermelho
+  if(ULTIMA && pt.length > v.silabas.length){
+    pt.slice(v.silabas.length).forEach(s=>{
+      const d=document.createElement('div');
+      d.className='syl sobra';
+      d.innerHTML=`<div class="s">sem nota</div><div class="m">!</div><div class="pt">${s}</div>`;
+      scan.appendChild(d);
+    });
+  }
 }
-$('#ent').oninput=e=>$('#entv').textContent=e.target.value;
 
-let ULTIMA=null;
+function silabasPT(){
+  return $('#letra').value.split(/[\s,;.!?]+/).filter(Boolean)
+    .flatMap(p=>p.split('-')).map(s=>s.trim()).filter(Boolean);
+}
+
+/* Candidatos a elisão: fronteiras vogal|vogal entre sílabas vizinhas. É o
+   ajuste que os arranjos do projeto já usam ("que eu" -> "queeu") e que o
+   handout previa sugerir. */
+function candidatosElisao(sil){
+  const fora=[];
+  for(let i=0;i<sil.length-1;i++){
+    const a=sil[i].slice(-1).toLowerCase(), b=sil[i+1].slice(0,1).toLowerCase();
+    if(VOGAIS.includes(a)&&VOGAIS.includes(b)) fora.push(`${sil[i]}·${sil[i+1]}`);
+  }
+  return fora;
+}
+
+function validarLetra(){
+  const sem=$('#semaforo'), dica=$('#dicaElisao');
+  const pt=silabasPT();
+  if(!ULTIMA){
+    sem.className='semaforo';
+    sem.textContent = pt.length
+      ? `${pt.length} sílabas escritas — gere a melodia para validar contra o aruz.`
+      : 'Gere uma melodia e escreva a letra para validar sílaba↔nota.';
+    dica.textContent=''; return;
+  }
+  const n=ULTIMA.notas.length, d=pt.length-n;
+  if(pt.length===0){
+    sem.className='semaforo';
+    sem.textContent=`${n} notas esperando letra.`;
+    dica.textContent=''; return;
+  }
+  if(d===0){
+    sem.className='semaforo ok';
+    sem.textContent=`✓ ${pt.length} sílabas para ${n} notas — a letra cabe no ritmo de Rumi.`;
+    dica.textContent='';
+  } else if(d>0){
+    sem.className='semaforo erro';
+    sem.textContent=`${pt.length} sílabas para ${n} notas — ${d} sobrando.`;
+    const c=candidatosElisao(pt);
+    dica.textContent = c.length
+      ? `Elisão possível (${d} necessária${d>1?'s':''}) nestas fronteiras vogal-vogal: ${c.slice(0,6).join('  ')}`
+      : 'Sem fronteira vogal-vogal para elidir: corte uma palavra ou use uma operação rítmica.';
+  } else {
+    sem.className='semaforo erro';
+    sem.textContent=`${pt.length} sílabas para ${n} notas — faltam ${-d}.`;
+    dica.textContent='Acrescente sílabas, ou aplique diminuição para adensar o ritmo.';
+  }
+  desenharScan();
+}
+
+$('#ent').oninput=e=>$('#entv').textContent=e.target.value;
+$('#amb').oninput=e=>$('#ambv').textContent=e.target.value;
+$('#letra').oninput=validarLetra;
+
 async function gerar(){
-  const body={verso_id:ATUAL.id, modo:$('#modo').value, entropia:parseFloat($('#ent').value), semente:'diva'};
-  const r=await fetch('/api/gerar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
-  const d=await r.json(); ULTIMA=d;
-  const a=d.auditoria;
-  let txt=`verso: ${a.verso_id}  (${a.obra})\nmetro: ${a.metro} · modo: ${d.modo}\nregra: ${a.regra}\n`;
-  txt+=`sílabas: ${a.conferencia.n_silabas} · notas: ${a.conferencia.n_notas} · alinhado: ${a.conferencia.alinhado}\n\n`;
-  txt+='sílaba   aruz  dur   nota\n';
-  d.notas.forEach(n=>{ txt+=`${n.silaba.padEnd(8)} ${n.aruz==='–'?'—':n.aruz}     ${n.dur}   ${n.nome}\n`; });
+  const body={verso_id:ATUAL.id, modo:$('#modo').value,
+              entropia:parseFloat($('#ent').value), ambito:parseInt($('#amb').value,10),
+              operacao:$('#operacao').value, semente:'diva'};
+  let d;
+  try{
+    d = await api('/api/gerar',{method:'POST',headers:{'Content-Type':'application/json'},
+                               body:JSON.stringify(body)});
+  }catch(e){
+    $('#audit').textContent='Erro do servidor: '+e.message;
+    return;
+  }
+  ULTIMA=d;
+  const a=d.auditoria, cm=a.conferencia_metro||{};
+  let txt=`verso: ${a.verso_id}  (${a.obra})\n`;
+  txt+=`metro: ${a.metro} · modo: ${d.modo} · tônica MIDI ${a.tonica_midi}\n`;
+  txt+=`metro confere com a escansão: ${cm.conforme}\n`;
+  (cm.divergencias||[]).forEach(x=>{ txt+=`   divergência: ${x}\n`; });
+  txt+=`\nregra de duração: ${a.regra_duracao}\n`;
+  txt+=`regra de altura  : ${a.regra_altura}\n`;
+  const ops=(a.operacoes_ritmicas&&a.operacoes_ritmicas.length)?a.operacoes_ritmicas.join(' → '):'derivação direta';
+  txt+=`operações        : ${ops}\n`;
+  txt+=`rastro do aruz intacto: ${d.rastro?d.rastro.rastro_intacto:'?'}`;
+  if(d.anacruse) txt+=` · anacruse ${d.anacruse}`;
+  txt+=`\nsílabas: ${a.conferencia.n_silabas} · notas: ${a.conferencia.n_notas} · alinhado: ${a.conferencia.alinhado}\n\n`;
+  txt+='sílaba   aruz  base → dur   grau  nota\n';
+  d.notas.forEach(n=>{
+    const seta = n.dur===n.dur_base ? '  =  ' : '  →  ';
+    txt+=`${n.silaba.padEnd(8)} ${n.aruz==='–'?'—':n.aruz}     ${String(n.dur_base).padStart(4)}${seta}${String(n.dur).padEnd(5)} ${String(n.grau_modal).padStart(2)}${n.oitava?'+'+n.oitava+'8ª':'   '}  ${n.nome}\n`;
+  });
   $('#audit').textContent=txt;
+  desenharScan();
+  validarLetra();
 }
 $('#gerar').onclick=gerar;
 
 // síntese simples (Web Audio) — apenas guia, não gravação
 let ctx;
 function tocar(){
-  if(!ULTIMA){return;}
+  if(!ULTIMA){ $('#semaforo').textContent='Gere uma melodia antes de tocar.'; return; }
   ctx=ctx||new (window.AudioContext||window.webkitAudioContext)();
-  const bpm=88, spb=60/bpm, t0=ctx.currentTime+0.08; let t=t0;
+  const bpm=88, spb=60/bpm, t0=ctx.currentTime+0.08;
+  let t=t0+(ULTIMA.anacruse||0)*spb;   // respeita o deslocamento da síncope
   ULTIMA.notas.forEach(n=>{
     const dur=n.dur*spb, f=440*Math.pow(2,(n.midi-69)/12);
     const o=ctx.createOscillator(), g=ctx.createGain();
