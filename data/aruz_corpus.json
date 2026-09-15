@@ -19,6 +19,13 @@
       "padrao_pe": ["u","–","–","–"],
       "descricao": "Metro lírico comum em ghazais de amor.",
       "assinatura_afetiva": "ondulação, anseio, embalo"
+    },
+    "rajaz_mosamman_matvi_makhbun": {
+      "pe": "moftaʿelon mafāʿelon moftaʿelon mafāʿelon",
+      "padrao_pes": [["–","u","u","–"], ["u","–","u","–"]],
+      "descricao": "Rajaz de oito pés, com os pés alternando entre a forma matvi (moftaʿelon) e a makhbun (mafāʿelon). Metro de pés ALTERNADOS: por isso 'padrao_pes' (lista) em vez de 'padrao_pe' (pé único repetido) — um único pé repetido não descreve o verso.",
+      "assinatura_afetiva": "pulso trocado, passo que hesita e retoma",
+      "_fonte": "Vazn registrado pelo Ganjoor para o gazal 323 do Divã de Shams: مفتعلن مفاعلن مفتعلن مفاعلن (رجز مثمن مطوی مخبون). https://ganjoor.net/moulavi/shams/ghazalsh/sh323"
     }
   },
   "versos": [
@@ -58,7 +65,13 @@
       "dominio_publico": true,
       "metro_conferido": false,
       "_nota": "Escansão aproximada para fins de protótipo; conferir com edição Foruzanfar antes de uso final.",
-      "_divergencia_metro": "A escansão registrada aqui não se decompõe nos pés de ramal_mahzuf ('–u––'): os pés 2 e 3 saem como 'u–––', que é justamente o pé do hazaj (mafāʿīlun), já declarado acima. Ou o rótulo do metro está errado, ou a escansão está — é questão de edição crítica, não de código, e por isso nada aqui foi 'corrigido' automaticamente. Para resolver: a Ghazals-Foruzanfar Concordance (https://www.dar-al-masnavi.org/ghazals-foruz.html) dá o vazn de cada gazal do Divã."
+      "_divergencia_metro": "A escansão registrada aqui não se decompõe nos pés de ramal_mahzuf ('–u––'): os pés 2 e 3 saem como 'u–––', que é justamente o pé do hazaj (mafāʿīlun), já declarado acima. Ou o rótulo do metro está errado, ou a escansão está — é questão de edição crítica, não de código, e por isso nada aqui foi 'corrigido' automaticamente.",
+      "_proposta": "PROPOSTA, não aplicada — ver docs/PROPOSTA_divan_2214.md. O verso é o gazal 323 do Divã de Shams (não 2214), e o vazn registrado pela fonte é rajaz mosamman matvi makhbun. A escansão proposta abaixo casa 16/16 posições com esse vazn, conferida por conferir_metro(). Muda 5 das 14 posições; a duração total segue 12.0 quarters. Só entra em vigor com o aval do autor.",
+      "_proposta_metro": "rajaz_mosamman_matvi_makhbun",
+      "_proposta_escansao": ["–","u","u","–","u","–","u","–","=","u","=","–","u","–"],
+      "_proposta_obra": "Divã de Shams, gazal 323 (abertura)",
+      "_proposta_fonte": "https://ganjoor.net/moulavi/shams/ghazalsh/sh323",
+      "_proposta_ressalva": "A numeração do Ganjoor é amplamente usada, mas a referência canônica é a edição Foruzanfar, não consultada diretamente. A escansão não depende dessa conferência (deriva do vazn e das regras de quantidade silábica); o id e a atribuição dependem."
     }
   ]
 }

@@ -125,63 +125,111 @@ def durar_por_aruz(escansao: list[str], final_longa: bool = True) -> list[float]
 # Camada 1 da auditoria: o metro declarado gera mesmo a escansão declarada?
 # ---------------------------------------------------------------------------
 
+# expansão de cada símbolo nas posições métricas que ele ocupa. A superlonga
+# vale por duas — é a definição que o próprio corpus declara ("= longa+curta")
+# — e sem expandir não há como casar uma escansão que a use contra o padrão do
+# metro, porque símbolo e posição métrica deixam de ser a mesma coisa.
+EXPANSAO = {"u": ["u"], "–": ["–"], "=": ["–", "u"]}
+
+
+def expandir_escansao(escansao: list[str]) -> list[tuple[str, int]]:
+    """Expande a escansão em posições métricas.
+
+    Devolve [(símbolo_da_posição, índice_da_sílaba)], de modo que cada posição
+    saiba de que sílaba veio — é isso que permite relatar a divergência
+    apontando a sílaba, e não um número solto.
+    """
+    posicoes = []
+    for i, simbolo in enumerate(escansao):
+        if simbolo not in EXPANSAO:
+            raise ValueError(f"símbolo de escansão desconhecido: {simbolo!r}")
+        for p in EXPANSAO[simbolo]:
+            posicoes.append((p, i))
+    return posicoes
+
+
+def _pes_do_metro(metro: dict, n_posicoes: int) -> list[tuple[list[str], int, int]]:
+    """Fatia as posições métricas nos pés do metro, ciclando o padrão.
+
+    `padrao_pes` (lista de pés) cobre os metros de pés alternados, como o rajaz
+    mosamman matvi makhbun (mofta'elon mafā'elon, repetidos), em que um único
+    pé repetido não descreve o verso. `padrao_pe` segue valendo para os metros
+    de pé único já no corpus.
+    """
+    pes = metro.get("padrao_pes") or [metro.get("padrao_pe")]
+    if not pes or not pes[0]:
+        raise ValueError("metro sem 'padrao_pe' nem 'padrao_pes'")
+    fatias, pos, i = [], 0, 0
+    while pos < n_posicoes:
+        pe = pes[i % len(pes)]
+        fatias.append((pe, pos, min(pos + len(pe), n_posicoes)))
+        pos += len(pe)
+        i += 1
+    return fatias
+
+
 def conferir_metro(verso: dict, metros: dict) -> dict:
     """Decompõe a escansão do verso nos pés do metro declarado e relata as
     divergências.
 
-    Duas licenças da prosódia persa são aceitas:
+    A escansão é primeiro expandida em posições métricas (ver
+    expandir_escansao), porque a superlonga ocupa duas.
+
+    Três licenças da prosódia persa são aceitas:
 
     - **pé final truncado** (mahzuf/catalético): o último pé pode ser mais
       curto que o padrão — é o que faz de `fāʿilātun fāʿilātun fāʿilun` o
       metro do Masnavi;
-    - **anceps inicial**: a primeira posição do verso admite longa ou breve.
+    - **anceps inicial**: a primeira posição do verso admite longa ou breve;
+    - **fim de hemistíquio**: a última sílaba conta sempre como longa, regra
+      que o próprio corpus declara.
 
-    E a regra que o próprio corpus declara — a sílaba final do hemistíquio
-    conta sempre como longa — é aceita na última posição.
-
-    Devolve {metro, conforme, pes, divergencias}. Função pura.
+    Devolve {metro, conforme, pes, divergencias, n_posicoes}. Função pura.
     """
     nome = verso.get("metro", "")
     metro = metros.get(nome)
     if metro is None:
-        return {"metro": nome, "conforme": False, "pes": [],
+        return {"metro": nome, "conforme": False, "pes": [], "n_posicoes": 0,
                 "divergencias": [f"metro '{nome}' não declarado no corpus"]}
 
-    padrao = metro["padrao_pe"]
-    k = len(padrao)
-    escansao = verso["escansao"]
+    silabas = verso.get("translit_silabas", [])
+    posicoes = expandir_escansao(verso["escansao"])
+    fatias = _pes_do_metro(metro, len(posicoes))
     pes, divergencias = [], []
 
-    for inicio in range(0, len(escansao), k):
-        pe = escansao[inicio:inicio + k]
-        n_pe = inicio // k
-        primeiro = n_pe == 0
-        ultimo = inicio + k >= len(escansao)
+    for n_pe, (padrao, ini, fim) in enumerate(fatias):
+        trecho = posicoes[ini:fim]
+        ultimo_pe = n_pe == len(fatias) - 1
         divs_pe = []
-        for j, simbolo in enumerate(pe):
+        for j, (simbolo, i_silaba) in enumerate(trecho):
             esperado = padrao[j]
             if simbolo == esperado:
                 continue
-            if primeiro and j == 0:
-                continue                      # anceps inicial
-            if ultimo and j == len(pe) - 1 and simbolo in LONGAS:
-                continue                      # fim de hemistíquio = longa
-            divs_pe.append({"posicao": j + 1, "encontrado": simbolo,
-                            "esperado": esperado})
+            if n_pe == 0 and j == 0:
+                continue                                   # anceps inicial
+            if ultimo_pe and ini + j == len(posicoes) - 1 and (
+                    simbolo in LONGAS or verso["escansao"][i_silaba] in LONGAS):
+                continue                                   # fim de hemistíquio
+            divs_pe.append({
+                "posicao": j + 1,
+                "silaba": silabas[i_silaba] if i_silaba < len(silabas) else "?",
+                "encontrado": simbolo, "esperado": esperado})
         pes.append({
             "n": n_pe + 1,
-            "escansao": "".join(pe),
-            "esperado": "".join(padrao[:len(pe)]),
-            "truncado": len(pe) < k,
+            "escansao": "".join(s for s, _ in trecho),
+            "esperado": "".join(padrao[:len(trecho)]),
+            "silabas": [silabas[i] for i in dict.fromkeys(i for _, i in trecho)
+                        if i < len(silabas)],
+            "truncado": len(trecho) < len(padrao),
             "conforme": not divs_pe,
         })
         for d in divs_pe:
             divergencias.append(
-                f"pé {n_pe + 1}, posição {d['posicao']}: "
+                f"pé {n_pe + 1}, posição {d['posicao']} (sílaba '{d['silaba']}'): "
                 f"encontrado '{d['encontrado']}', esperado '{d['esperado']}'")
 
-    return {"metro": nome, "conforme": not divergencias,
-            "pes": pes, "divergencias": divergencias}
+    return {"metro": nome, "conforme": not divergencias, "pes": pes,
+            "n_posicoes": len(posicoes), "divergencias": divergencias}
 
 
 # ---------------------------------------------------------------------------

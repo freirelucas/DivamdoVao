@@ -209,6 +209,58 @@ def test_masnavi_e_ramal_mahzuf():
             f"{vid}: pés {[p['escansao'] for p in r['pes']]}"
         assert r["pes"][-1]["truncado"], "o último pé do mahzuf é truncado"
 
+def test_superlonga_expande_em_duas_posicoes():
+    """A superlonga vale por duas posições métricas — a definição que o corpus
+    declara. Sem isso, escansão e padrão do metro deixam de ser comparáveis."""
+    from engine.generative import expandir_escansao
+    posicoes = expandir_escansao(["–", "=", "u"])
+    assert [s for s, _ in posicoes] == ["–", "–", "u", "u"]
+    assert [i for _, i in posicoes] == [0, 1, 1, 2], "cada posição sabe sua sílaba"
+    assert durar_por_aruz(["="]) == [1.5]
+
+def test_simbolo_de_escansao_desconhecido_recusado():
+    from engine.generative import expandir_escansao
+    try:
+        expandir_escansao(["-"])          # hífen ASCII, não o travessão do corpus
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("símbolo desconhecido deveria falhar alto")
+
+def test_metro_de_pes_alternados():
+    """Metros de pés alternados precisam de 'padrao_pes'; um pé único repetido
+    não descreve o rajaz mosamman matvi makhbun."""
+    metro = CORPUS["metros"]["rajaz_mosamman_matvi_makhbun"]
+    assert "padrao_pes" in metro and len(metro["padrao_pes"]) == 2
+
+def test_proposta_divan_confere_com_o_vazn():
+    """A escansão proposta em docs/PROPOSTA_divan_2214.md casa com o vazn
+    publicado — 16 posições, 4 pés. O corpus segue intacto: isto verifica a
+    proposta, não a aplica."""
+    v = _verso("divan_2214")
+    assert "_proposta_escansao" in v, "a proposta tem de estar registrada no corpus"
+    proposto = {
+        "metro": v["_proposta_metro"],
+        "escansao": v["_proposta_escansao"],
+        "translit_silabas": v["translit_silabas"],
+    }
+    r = conferir_metro(proposto, CORPUS["metros"])
+    assert r["conforme"], r["divergencias"]
+    assert r["n_posicoes"] == 16, r["n_posicoes"]
+    assert [pe["escansao"] for pe in r["pes"]] == ["–uu–", "u–u–", "–uu–", "u–u–"]
+    # a superlonga 'xār' atravessa a fronteira entre os pés 3 e 4
+    assert "xār" in r["pes"][2]["silabas"] and "xār" in r["pes"][3]["silabas"]
+    # e a correção não muda a duração total do verso, só o ritmo por dentro
+    assert sum(durar_por_aruz(v["_proposta_escansao"])) == \
+           sum(durar_por_aruz(v["escansao"])) == 12.0
+
+def test_corpus_atual_segue_intacto():
+    """Guarda contra aplicar a proposta sem querer: enquanto metro_conferido for
+    false, os campos vigentes são os antigos."""
+    v = _verso("divan_2214")
+    assert v["metro"] == "ramal_mahzuf", "a proposta não deve ter sido aplicada"
+    assert v["metro_conferido"] is False
+
 def test_metro_desconhecido_nao_explode():
     """Um metro não declarado vira divergência, não exceção."""
     r = conferir_metro({"metro": "inventado", "escansao": ["–", "u"]},
