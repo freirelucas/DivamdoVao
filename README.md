@@ -49,5 +49,13 @@ original. Não é parecer jurídico — ver `handout/HANDOUT.md`, seção 7.
 
 ## Licença
 
-Código sob MIT (ver `LICENSE`). Conteúdo textual/musical autoral: CC BY-SA 4.0
-(sugestão; ajuste conforme sua escolha).
+Código sob **GPL-3.0** (ver `LICENSE`). O projeto era MIT até o commit `91b2a8f`;
+a mudança veio da integração com a [musicntwrk](https://github.com/marcobn/musicntwrk),
+que é GPL-3.0 e estende a licença à obra combinada. Quem obteve uma versão anterior
+segue com os direitos que o MIT concedeu naquela versão — ver `LICENSE.historico`,
+e o texto MIT original em `LICENSE.MIT`.
+
+Isso vale para o **código**. O conteúdo textual e musical autoral (letra em
+português, melodia, harmonia, arranjo) tem licença separada: CC BY-SA 4.0
+(sugestão; ajuste conforme sua escolha). O texto persa de Rumi é domínio público e
+a escansão métrica é fato linguístico, não protegível.

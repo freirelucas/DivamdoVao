@@ -1,5 +1,15 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+#
+# Divã do Vão — ferramenta de co-produção musical a partir do aruz persa.
+# Copyright (C) 2026  Divã do Vão
+#
+# Este programa é software livre: você pode redistribuí-lo e/ou modificá-lo
+# sob os termos da GNU General Public License, versão 3, publicada pela Free
+# Software Foundation. Ele é distribuído na esperança de ser útil, mas SEM
+# NENHUMA GARANTIA. Veja o arquivo LICENSE, e LICENSE.historico para a nota
+# sobre o licenciamento MIT anterior.
+#
 """
 Servidor local do Divã do Vão — sem dependências externas (só stdlib).
 Sobe a interface de co-produção e uma API mínima sobre o motor generativo.

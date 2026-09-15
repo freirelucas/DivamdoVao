@@ -106,6 +106,13 @@ Isso torna o processo inspecionável por um músico, um revisor ou o próprio au
 - **Letra em português**: recriação própria, obra derivada original.
 - **Música**: melodia (ritmo do aruz + alturas modais), harmonia e arranjo, 100% originais.
 
+**Licença do código**: GPL-3.0 desde a integração com a musicntwrk (que é GPL-3.0 e
+estende a licença à obra combinada). O projeto era MIT até o commit `91b2a8f`, e quem
+obteve versão anterior segue com os direitos do MIT naquela versão — ver
+`LICENSE.historico`. O relicenciamento alcança só o código: não alcança Rumi (domínio
+público), nem a escansão (fato linguístico), nem o conteúdo autoral textual e musical,
+cuja licença é escolha separada.
+
 *Não é parecer jurídico. Uso comercial (fonograma, sincronização) pede validação de advogado de direito autoral.*
 
 ---
