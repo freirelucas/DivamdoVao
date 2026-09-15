@@ -1,3 +1,8 @@
-# Básico (app + motor + testes): apenas a biblioteca padrão do Python 3.10+.
-# Opcionais, para exportar partitura e áudio:
-music21>=9.1
+# Básico (app + motor + operações rítmicas + exportação + testes):
+# apenas a biblioteca padrão do Python 3.10+. Nada a instalar.
+#
+# Este arquivo existe de propósito sem dependências: o princípio do projeto é
+# que o básico — incluindo exportar partitura e MIDI — rode em máquina modesta
+# sem instalar nada (ver engine/export.py).
+#
+# Para os extras opcionais (LilyPond/PDF), ver requirements-opcionais.txt.

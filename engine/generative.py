@@ -39,7 +39,7 @@ chamado via CLI). Ver tests/ para verificação dos invariantes.
 """
 from __future__ import annotations
 import json, random, hashlib
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 
 # duração musical por símbolo do aruz (em quarterLength, base 4/4)
@@ -85,9 +85,17 @@ class Frase:
     modo: str = ""
     tonica_midi: int = 62  # D4
     operacoes: list[str] = field(default_factory=list)
+    anacruse: float = 0.0  # deslocamento da frase contra o tempo forte, em quarters
 
     def duracao_total(self) -> float:
         return sum(n.dur for n in self.notas)
+
+    def copia(self) -> "Frase":
+        """Cópia profunda — as operações rítmicas são puras e não mutam a
+        frase que recebem."""
+        return Frase(notas=[replace(n) for n in self.notas], metro=self.metro,
+                     modo=self.modo, tonica_midi=self.tonica_midi,
+                     operacoes=list(self.operacoes), anacruse=self.anacruse)
 
 
 def carregar_corpus(caminho: str | Path) -> dict:
@@ -319,7 +327,10 @@ def relatorio_auditoria(frase: Frase, verso: dict, metros: dict | None = None) -
 
 
 if __name__ == "__main__":
-    import argparse
+    import argparse, sys
+    # rodando como script, sys.path[0] é engine/; a raiz precisa entrar para
+    # que os módulos irmãos (engine.ritmo, engine.export) sejam importáveis.
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
     ap = argparse.ArgumentParser(description="Gera melodia a partir do aruz.")
     ap.add_argument("--verso", default="masnavi_1")
     ap.add_argument("--modo", default="dorico", choices=list(MODOS))
@@ -332,6 +343,11 @@ if __name__ == "__main__":
     ap.add_argument("--entropia", type=float, default=0.4,
                     help="0 = grau conjunto, 1 = muitos saltos")
     ap.add_argument("--semente", default="diva")
+    ap.add_argument("--export", default="",
+                    help="formatos a exportar, separados por vírgula: musicxml,midi")
+    ap.add_argument("--operacao", default="", choices=["", "inversao", "aumentacao",
+                                                      "diminuicao", "deslocamento"],
+                    help="operação rítmica a aplicar (ver engine/ritmo.py)")
     args = ap.parse_args()
 
     corpus = carregar_corpus(args.corpus)
@@ -339,13 +355,25 @@ if __name__ == "__main__":
     frase = gerar_melodia(verso, modo=args.modo, tonica_midi=args.tonica,
                           entropia=args.entropia, ambito=args.ambito,
                           semente=args.semente)
+    if args.operacao:
+        from engine.ritmo import OPERACOES
+        frase = OPERACOES[args.operacao](frase)
     rel = relatorio_auditoria(frase, verso, corpus["metros"])
 
-    Path(args.out).mkdir(parents=True, exist_ok=True)
-    Path(f"{args.out}/{args.verso}_auditoria.json").write_text(
-        json.dumps(rel, ensure_ascii=False, indent=2), encoding="utf-8")
+    if args.export:
+        from engine.export import escrever
+        formatos = [f.strip() for f in args.export.split(",") if f.strip()]
+        for alvo in escrever(frase, rel, args.out, args.verso, formatos,
+                             titulo=verso.get("obra", args.verso)):
+            print("escrito:", alvo)
+    else:
+        Path(args.out).mkdir(parents=True, exist_ok=True)
+        Path(f"{args.out}/{args.verso}_auditoria.json").write_text(
+            json.dumps(rel, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"Melodia gerada para {args.verso}: {len(frase.notas)} notas, "
           f"{frase.duracao_total()} quarters. Auditoria salva.")
+    if frase.operacoes:
+        print("Operações rítmicas:", ", ".join(frase.operacoes))
     print("Alinhamento sílaba↔nota:", rel["conferencia"]["alinhado"])
     cm = rel["conferencia_metro"]
     print(f"Metro {cm['metro']} confere com a escansão:", cm["conforme"])

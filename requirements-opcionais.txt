@@ -1,3 +1,10 @@
+# Opcionais. NÃO são necessários para o motor, o app, as operações rítmicas
+# nem para exportar MusicXML/MIDI — engine/export.py faz isso só com a stdlib.
+
+# Python (pip install -r requirements-opcionais.txt):
+#   music21 grava PDF via LilyPond e serve de checagem cruzada da partitura
+music21>=9.1
+
 # Ferramentas de sistema (instalar via apt/brew, não pip):
 #   lilypond      -> gravação de partitura em PDF
 #   fluidsynth    -> síntese de áudio a partir de MIDI
