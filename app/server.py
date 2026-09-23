@@ -24,6 +24,9 @@ Endpoints:
     POST /api/gerar             -> {verso_id, modo, entropia, ambito, tonica,
                                     semente, operacao, letra, compasso}
                                 => melodia + auditoria + complexidade
+    POST /api/candidatas        -> {verso_id, modo, n, lote} => lote para julgar
+    POST /api/julgar            -> {a, b, preferida} => grava e retreina
+    GET  /api/gosto             -> pesos em português + confiança
 
 Erros sempre voltam como JSON com status HTTP adequado. Antes, uma entrada
 inválida (modo inexistente, entropia não numérica, JSON malformado) derrubava
@@ -41,6 +44,7 @@ from engine.generative import (carregar_corpus, gerar_melodia,
 from engine.ritmo import OPERACOES, conferir_rastro
 from engine.complexidade import relatorio as relatorio_complexidade, compasso_natural
 from engine.export import assinatura_de_compasso
+from engine import gosto, pipeline, selecao
 
 CORPUS = carregar_corpus(RAIZ / "data/aruz_corpus.json")
 LIMITE_CORPO = 64 * 1024        # o corpo do POST é um punhado de parâmetros
@@ -110,12 +114,23 @@ class Handler(BaseHTTPRequestHandler):
                     {"versos": versos, "metros": CORPUS["metros"],
                      "modos": sorted(MODOS), "operacoes": sorted(OPERACOES)},
                     ensure_ascii=False))
+            if self.path == "/api/gosto":
+                js = gosto.carregar()
+                return self._send(200, json.dumps({
+                    "n": len(js),
+                    "explicacao": gosto.explicar(gosto.treinar(js)),
+                    "confianca": gosto.confianca(js),
+                }, ensure_ascii=False))
             return self._erro(404, "não encontrado")
         except Exception as e:                                   # nunca derruba
             return self._erro(500, f"erro interno: {type(e).__name__}: {e}")
 
     def do_POST(self):
         try:
+            if self.path == "/api/candidatas":
+                return self._candidatas(self._corpo())
+            if self.path == "/api/julgar":
+                return self._julgar(self._corpo())
             if self.path != "/api/gerar":
                 return self._erro(404, "não encontrado")
             req = self._corpo()
@@ -180,6 +195,68 @@ class Handler(BaseHTTPRequestHandler):
             return self._erro(400, str(e))
         except Exception as e:
             return self._erro(500, f"erro interno: {type(e).__name__}: {e}")
+
+    def _candidatas(self, req: dict) -> None:
+        """Estágio 7: devolve o lote a julgar.
+
+        Sem julgamentos gravados, o lote vem de medoides e a resposta diz que
+        isso é cobertura, não qualidade. Com julgamentos, vem do gosto
+        aprendido. O campo `ordenacao` carrega essa distinção até a tela.
+        """
+        verso = next((v for v in CORPUS["versos"]
+                      if v["id"] == req.get("verso_id")), None)
+        if not verso:
+            raise ErroCliente(f"verso_id inválido: {req.get('verso_id')!r}")
+        modo = req.get("modo", "dorico")
+        if modo not in MODOS:
+            raise ErroCliente(f"modo inválido: {modo!r}; use um de {sorted(MODOS)}")
+        n = _numero(req, "n", 200, 10, 2000, inteiro=True)
+        lote = _numero(req, "lote", 8, 2, 24, inteiro=True)
+        res = pipeline.executar(
+            verso, CORPUS["metros"], modo=modo, n=n, k=lote,
+            julgamentos=gosto.carregar(),
+            ambito=_numero(req, "ambito", 9, 2, 36, inteiro=True),
+            motivico=bool(req.get("motivico")))
+        return self._send(200, json.dumps({
+            "verso": res["verso"], "modo": res["modo"],
+            "ordenacao": res["ordenacao"],
+            "peneira": res["peneira"],
+            "geradas": res["geradas"], "aprovadas": res["aprovadas"],
+            "candidatas": [{
+                "semente": c.semente,
+                "escore": c.escore,
+                "atributos": c.atributos,
+                "notas": [{"midi": nt.midi, "nome": _midi_para_nome(nt.midi),
+                           "dur": nt.dur, "silaba": nt.silaba, "aruz": nt.aruz}
+                          for nt in c.frase.notas],
+                "anacruse": c.frase.anacruse,
+                "hipoteses": c.medidas["hipoteses"],
+                "metricas": c.medidas["metricas_mir"],
+            } for c in res["escolhidas"]],
+            "nomes_dos_atributos": list(selecao.NOMES_DOS_ATRIBUTOS),
+        }, ensure_ascii=False))
+
+    def _julgar(self, req: dict) -> None:
+        """Estágio 8: grava a comparação e devolve o gosto reaprendido."""
+        a, b = req.get("a"), req.get("b")
+        preferida = req.get("preferida")
+        if not isinstance(a, list) or not isinstance(b, list) or len(a) != len(b):
+            raise ErroCliente("'a' e 'b' devem ser listas de atributos do mesmo tamanho")
+        if preferida not in ("a", "b"):
+            raise ErroCliente("'preferida' deve ser 'a' ou 'b'")
+        try:
+            a = [float(x) for x in a]
+            b = [float(x) for x in b]
+        except (TypeError, ValueError):
+            raise ErroCliente("atributos devem ser números")
+        js = gosto.registrar(gosto.carregar(), a, b, preferida,
+                             contexto=req.get("contexto"))
+        gosto.gravar(js)
+        return self._send(200, json.dumps({
+            "n": len(js),
+            "explicacao": gosto.explicar(gosto.treinar(js)),
+            "confianca": gosto.confianca(js),
+        }, ensure_ascii=False))
 
     def _corpo(self) -> dict:
         """Lê e decodifica o corpo do POST, recusando o que não serve."""

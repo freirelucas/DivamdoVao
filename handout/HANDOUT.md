@@ -142,6 +142,39 @@ simbólicas no padrão do muspy.
 
 ---
 
+## 6-B. Escolher: o pipeline e o limite da automação
+
+O motor gera centenas de milhões de melodias por modo a partir de 21 segundos de
+Rumi. `engine/pipeline.py` encadeia dez estágios, e a linha que os divide é o
+desenho inteiro: gerar, peneirar e medir são baratos; escutar e decidir são caros.
+
+**Quatro heurísticas de filtragem foram propostas e derrubadas pela medição** —
+filtros de sanidade que eram gosto disfarçado, uma norma de música clássica
+ocidental, um perfil de estilo com autoria inventada, e um critério de diversidade
+26% pior que o sorteio aleatório. O registro está em `docs/PIPELINE.md` e no
+docstring de `engine/filtros.py`, e um teste impede a reincidência.
+
+O que sobrou é modesto e honesto: a peneira rejeita 0,07% (só o que não é
+melodia); o lote inicial usa medoides, que cobrem o espaço 13–17% melhor que o
+sorteio — afirmação sobre **cobertura**, não sobre qualidade; e duas medidas
+derivadas do próprio material (eco entre os pés do aruz, grau estável em sílaba
+longa) entram **rotuladas como hipóteses**, a serem confirmadas ou mortas pelo
+julgamento do autor.
+
+Daí em diante quem ordena é `engine/gosto.py`, que aprende de comparações A/B.
+Linear sobre atributos interpretáveis, porque um ranqueador opaco contradiria a
+auditabilidade que é a tese do projeto: ele diz, em português, o que aprendeu — e
+avisa quando a acurácia estaciona, o que significa que o gosto usa algo que não
+medimos. Cerca de 40 comparações bastam; depois o teto é a inconsistência do
+próprio julgamento humano.
+
+Uma correção que veio desse trabalho é do **gerador**, não da seleção: o contorno
+do pé 2 repetia o do pé 1 em 5,81% dos casos contra 3,70% por acaso — o ritmo
+derivava dos pés de Rumi e a melodia era cega a eles. Não se seleciona o que nunca
+é gerado. Com `motivico=True` o eco exato vai a 25,5%.
+
+---
+
 ## 7. Direitos autorais
 
 - **Texto persa de Rumi**: domínio público (morte em 1273).

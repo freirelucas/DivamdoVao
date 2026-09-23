@@ -1042,6 +1042,59 @@ def test_api_responde_a_entrada_invalida():
     finally:
         srv.terminate(); srv.wait(timeout=10)
 
+def test_api_julgamento_ab():
+    """Os endpoints do estágio 8: lote, julgamento e gosto."""
+    import tempfile, shutil
+    porta = 8979
+    memoria = RAIZ / "data/julgamentos.json"
+    guardado = memoria.read_text("utf-8") if memoria.exists() else None
+    if memoria.exists():
+        memoria.unlink()
+    srv = subprocess.Popen([sys.executable, "app/server.py", str(porta)],
+                           cwd=RAIZ, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    try:
+        for _ in range(50):
+            try:
+                if _pedir(porta, "/api/corpus")[0] == 200:
+                    break
+            except Exception:
+                pass
+            import time; time.sleep(0.1)
+
+        status, g = _pedir(porta, "/api/gosto")
+        assert status == 200 and g["n"] == 0
+        assert g["explicacao"]["treinado"] is False
+
+        status, d = _pedir(porta, "/api/candidatas",
+                           {"verso_id": "masnavi_1", "n": 60, "lote": 4})
+        assert status == 200, d
+        assert len(d["candidatas"]) == 4
+        # sem julgamento, a resposta tem de dizer que é cobertura
+        assert "não afirma qualidade" in d["ordenacao"], d["ordenacao"]
+        for c in d["candidatas"]:
+            assert c["atributos"] and c["notas"]
+            for bloco in c["hipoteses"].values():
+                assert bloco["estado"] == "não testada"
+
+        a, b = d["candidatas"][0]["atributos"], d["candidatas"][1]["atributos"]
+        status, r = _pedir(porta, "/api/julgar",
+                           {"a": a, "b": b, "preferida": "a"})
+        assert status == 200 and r["n"] == 1, r
+
+        for caso in ({"a": a, "b": b, "preferida": "talvez"},
+                     {"a": a, "b": [1, 2], "preferida": "a"},
+                     {"a": "x", "b": b, "preferida": "a"}):
+            status, corpo = _pedir(porta, "/api/julgar", caso)
+            assert status == 400 and corpo.get("erro"), caso
+        status, corpo = _pedir(porta, "/api/candidatas", {"verso_id": "nao_existe"})
+        assert status == 400 and corpo.get("erro")
+    finally:
+        srv.terminate(); srv.wait(timeout=10)
+        if memoria.exists():
+            memoria.unlink()
+        if guardado is not None:
+            memoria.write_text(guardado, encoding="utf-8")
+
 def test_api_expoe_a_cadeia_de_auditoria():
     """A resposta traz o que a interface precisa para mostrar a procedência."""
     porta = 8978

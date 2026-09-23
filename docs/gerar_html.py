@@ -32,6 +32,8 @@ PARES = [
      "Handout — Divã do Vão"),
     (RAIZ / "docs/PROCESSO_INTERFACE.md", RAIZ / "docs/PROCESSO_INTERFACE.html",
      "Processo da interface — Divã do Vão"),
+    (RAIZ / "docs/PIPELINE.md", RAIZ / "docs/PIPELINE.html",
+     "O pipeline — Divã do Vão"),
 ]
 
 ESTILO = """body{font-family:Georgia,serif;max-width:820px;margin:0 auto;padding:24px 18px 80px;

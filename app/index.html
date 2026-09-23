@@ -56,6 +56,17 @@
   .compassos{display:flex;gap:6px;flex-wrap:wrap;margin:.4em 0}
   .comp{border:1px solid var(--line);border-radius:6px;padding:4px 9px;font-size:.8rem;color:var(--dim)}
   .comp.melhor{border-color:var(--gold);color:var(--gold)}
+  .ab{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:.6em 0}
+  .lado{background:#0e0c08;border:1px solid var(--line);border-radius:8px;padding:10px}
+  .lado h4{margin:.1em 0 .5em;color:var(--gold);font-size:.95rem}
+  .lado .notas{font-family:'Courier New',monospace;font-size:.72rem;color:var(--dim);word-break:break-all}
+  .lado button{width:100%;margin-top:8px}
+  .hip{font-size:.72rem;color:var(--curta);margin-top:6px;border-top:1px dashed var(--line);padding-top:5px}
+  .hip b{color:var(--dim);font-weight:normal}
+  .aviso{color:var(--erro);font-size:.8rem;margin:.4em 0}
+  .pesos{font-family:'Courier New',monospace;font-size:.75rem;color:var(--dim);
+    background:#0e0c08;border:1px solid var(--line);border-radius:8px;padding:9px;margin:.4em 0}
+  @media(max-width:520px){.ab{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -119,6 +130,40 @@
     <div class="semaforo" id="semaforo">Gere uma melodia e escreva a letra para validar sílaba↔nota.</div>
     <p class="hint" id="dicaElisao"></p>
     <p class="hint">Cada sílaba do português ocupa uma nota. As caixas acima mostram, sob cada sílaba persa, a sílaba que você escreveu — verde quando casa, vermelho quando sobra.</p>
+  </div>
+
+  <div class="card">
+    <details>
+      <summary>Julgar candidatas — ensinar o gosto</summary>
+      <p class="hint">O motor gera milhões de melodias e não existe regra que
+        substitua o seu ouvido. Compare duas e escolha: em ~40 comparações o
+        ranqueador aprende a ordenar por você, e daí em diante as curvas
+        estacionam — não adianta julgar mais.</p>
+      <div class="row">
+        <button id="novoLote">Buscar candidatas</button>
+        <button id="verGosto" style="background:#2a2414;color:var(--gold);border:1px solid var(--line)">O que ele aprendeu</button>
+      </div>
+      <p class="hint" id="ordenacao"></p>
+      <div class="ab" id="ab" hidden>
+        <div class="lado">
+          <h4>A</h4><div class="notas" id="notasA"></div>
+          <div class="hip" id="hipA"></div>
+          <button id="tocarA" style="background:#2a2414;color:var(--gold);border:1px solid var(--line)">▶ Ouvir A</button>
+          <button id="prefA">Prefiro A</button>
+        </div>
+        <div class="lado">
+          <h4>B</h4><div class="notas" id="notasB"></div>
+          <div class="hip" id="hipB"></div>
+          <button id="tocarB" style="background:#2a2414;color:var(--gold);border:1px solid var(--line)">▶ Ouvir B</button>
+          <button id="prefB">Prefiro B</button>
+        </div>
+      </div>
+      <p class="hint" id="contador"></p>
+      <div id="gostoBox" hidden>
+        <div class="pesos" id="pesos"></div>
+        <p class="aviso" id="avisoGosto"></p>
+      </div>
+    </details>
   </div>
 
   <div class="card">
@@ -364,6 +409,71 @@ function desenharComplexidade(d){
 }
 $('#gerar').onclick=gerar;
 
+/* Julgamento A/B — o estágio 8 do pipeline, e a única verdade de referência
+   que este projeto tem. A tela nunca apresenta hipótese como qualidade: o
+   rótulo vem junto do valor, vindo do servidor. */
+let LOTE=[], PAR=[0,1];
+
+async function buscarLote(){
+  $('#ordenacao').textContent='buscando…';
+  try{
+    const d = await api('/api/candidatas',{method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({verso_id:ATUAL.id, modo:$('#modo').value,
+                           n:200, lote:8, ambito:parseInt($('#amb').value,10)})});
+    LOTE=d.candidatas; PAR=[0,1];
+    $('#ordenacao').textContent =
+      `${d.geradas} geradas · peneira cortou ${d.peneira.reprovadas} · ${d.ordenacao}`;
+    $('#ab').hidden=false;
+    mostrarPar();
+  }catch(e){ $('#ordenacao').textContent='Erro: '+e.message; }
+}
+
+function mostrarPar(){
+  if(LOTE.length<2){ $('#ab').hidden=true; return; }
+  [['A',PAR[0]],['B',PAR[1]]].forEach(([lado,idx])=>{
+    const c=LOTE[idx];
+    $('#notas'+lado).textContent = c.notas.map(n=>n.nome).join(' ');
+    $('#hip'+lado).innerHTML = Object.entries(c.hipoteses).map(([k,v])=>
+      `<b>${k.replace(/_/g,' ')}:</b> ${v.valor} <i>(${v.estado})</i>`).join('<br>');
+  });
+}
+
+async function julgar(preferida){
+  if(LOTE.length<2) return;
+  const a=LOTE[PAR[0]], b=LOTE[PAR[1]];
+  try{
+    const r = await api('/api/julgar',{method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({a:a.atributos, b:b.atributos, preferida,
+        contexto:{verso:ATUAL.id, modo:$('#modo').value, a:a.semente, b:b.semente}})});
+    $('#contador').textContent =
+      `${r.n} julgamento${r.n===1?'':'s'} gravado${r.n===1?'':'s'}.`
+      + (r.n>=40 ? ' A partir daqui o ganho estaciona — pode parar.' : '');
+    mostrarGosto(r);
+  }catch(e){ $('#contador').textContent='Erro: '+e.message; }
+  PAR=[PAR[1], (PAR[1]+1) % LOTE.length];
+  if(PAR[0]===PAR[1]) PAR[1]=(PAR[1]+1)%LOTE.length;
+  mostrarPar();
+}
+
+function mostrarGosto(r){
+  $('#gostoBox').hidden=false;
+  const e=r.explicacao;
+  if(!e.treinado){ $('#pesos').textContent=e.texto; $('#avisoGosto').textContent=''; return; }
+  $('#pesos').textContent = e.texto + '\n\n' +
+    e.ordenados.map(([n,p])=>`${p>=0?'+':''}${p.toFixed(3)}  ${n}`).join('\n');
+  $('#avisoGosto').textContent = (r.confianca && r.confianca.aviso) || '';
+}
+
+$('#novoLote').onclick=buscarLote;
+$('#prefA').onclick=()=>julgar('a');
+$('#prefB').onclick=()=>julgar('b');
+$('#verGosto').onclick=async()=>{
+  try{ mostrarGosto(await api('/api/gosto')); }
+  catch(e){ $('#pesos').textContent='Erro: '+e.message; }
+};
+
 // síntese simples (Web Audio) — apenas guia, não gravação
 let ctx;
 function tocar(){
@@ -382,6 +492,23 @@ function tocar(){
   });
 }
 $('#tocar').onclick=tocar;
+
+function tocarNotas(notas, anacruse){
+  ctx=ctx||new (window.AudioContext||window.webkitAudioContext)();
+  const bpm=88, spb=60/bpm; let t=ctx.currentTime+0.08+(anacruse||0)*spb;
+  notas.forEach(n=>{
+    const dur=n.dur*spb, f=440*Math.pow(2,(n.midi-69)/12);
+    const o=ctx.createOscillator(), g=ctx.createGain();
+    o.type='triangle'; o.frequency.value=f;
+    g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(0.2,t+0.02);
+    g.gain.exponentialRampToValueAtTime(0.001,t+dur*0.95);
+    o.connect(g).connect(ctx.destination); o.start(t); o.stop(t+dur);
+    t+=dur;
+  });
+}
+$('#tocarA').onclick=()=>LOTE[PAR[0]] && tocarNotas(LOTE[PAR[0]].notas, LOTE[PAR[0]].anacruse);
+$('#tocarB').onclick=()=>LOTE[PAR[1]] && tocarNotas(LOTE[PAR[1]].notas, LOTE[PAR[1]].anacruse);
+
 init();
 </script>
 </body>

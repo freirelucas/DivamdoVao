@@ -26,6 +26,13 @@ python3 engine/generative.py --verso masnavi_1 --complexidade \
 
 # 5. exportar partitura e MIDI (com o relatório de auditoria ao lado)
 python3 engine/generative.py --verso masnavi_1 --export musicxml,midi
+
+# 6. o pipeline inteiro: gerar muitas, peneirar, medir e escolher um lote
+python3 engine/pipeline.py --verso masnavi_1 --n 300 --lote 8
+
+# 7. ensinar o gosto (~40 comparações bastam; depois o ganho estaciona)
+python3 engine/pipeline.py --verso masnavi_1 --julgar 40
+python3 engine/pipeline.py --explicar-gosto
 ```
 
 ## Estrutura
@@ -37,11 +44,26 @@ python3 engine/generative.py --verso masnavi_1 --export musicxml,midi
 | `engine/ritmo.py` | Operações rítmicas auditáveis (inversão, aumentação, síncope, hoquetus) |
 | `engine/export.py` | Exportação MusicXML e MIDI, só com a stdlib |
 | `engine/complexidade.py` | Quanto é Rumi, quanto é acaso; medidas de encaixe; compasso natural |
+| `engine/filtros.py` | A peneira — e o registro das heurísticas que a medição derrubou |
+| `engine/selecao.py` | Partida a frio por medoides; hipóteses sempre rotuladas |
+| `engine/gosto.py` | Ranqueador aprendido do julgamento do autor, com pesos legíveis |
+| `engine/pipeline.py` | Os dez estágios encadeados, do verso à partitura |
 | `app/server.py` · `app/index.html` | Servidor local e interface de co-produção |
 | `tests/` | Garantia de auditabilidade (54 testes) |
 | `handout/HANDOUT.md` | Handout completo do projeto |
 | `docs/PROCESSO_INTERFACE.md` | Desenho do processo da interface |
-| `docs/PROPOSTA_divan_2214.md` | Proposta de correção filológica, aguardando aval |
+| `docs/PIPELINE.md` | O pipeline, o funil e as quatro heurísticas derrubadas |
+| `docs/PROPOSTA_divan_2214.md` | A correção filológica do verso do Divã (aplicada) |
+
+## Como escolher entre milhões de melodias
+
+O motor gera centenas de milhões de sequências de nota a partir de 21 segundos de
+Rumi, e **não existe regra que substitua o ouvido do autor**: quatro heurísticas
+propostas para filtrar foram derrubadas pela medição (ver `docs/PIPELINE.md`). A
+peneira rejeita só o degenerado — 0,07%. O resto é escolha humana, apoiada por um
+ranqueador que aprende de comparações A/B, mantém os pesos legíveis em português
+e avisa quando não sabe. Cerca de **40 comparações** bastam; depois disso o ganho
+estaciona.
 
 ## O compasso do aruz
 
