@@ -622,6 +622,64 @@ def test_relatorio_completo():
 
 
 # --------------------------------------------------------------------------
+# Gerador ciente do pé do aruz
+# --------------------------------------------------------------------------
+
+def _eco_entre_pes(frase, k=4):
+    m = [n.midi for n in frase.notas]
+    cont = lambda s: [(b > a) - (b < a) for a, b in zip(s, s[1:])]
+    c1, c2 = cont(m[:k]), cont(m[k:2 * k])
+    return sum(a == b for a, b in zip(c1, c2)) / len(c1) if c1 else 0.0
+
+def test_motivico_liga_a_melodia_aos_pes_do_aruz():
+    """O ritmo deriva dos pés de Rumi; a melodia era cega a eles — eco de
+    contorno em 5,8% dos casos contra 3,7% por acaso. Com motivico=True o
+    segundo pé reusa os passos do primeiro."""
+    from engine.generative import inicios_dos_pes
+    for vid in ("masnavi_1", "divan_2214"):
+        v = _verso(vid)
+        def media(mot):
+            return sum(_eco_entre_pes(gerar_melodia(
+                v, modo="dorico", semente=f"s{i}", motivico=mot,
+                metros=CORPUS["metros"])) for i in range(200)) / 200
+        cego, motivado = media(False), media(True)
+        assert motivado > cego + 0.15, f"{vid}: {cego:.3f} -> {motivado:.3f}"
+        assert motivado > 0.5, f"{vid}: eco {motivado:.3f} baixo demais"
+
+def test_motivico_desligado_por_padrao():
+    """É mudança de caráter musical, não correção de defeito: não pode alterar
+    o que já existe sem ser pedido."""
+    v = _verso("masnavi_1")
+    a = gerar_melodia(v, semente="y")
+    b = gerar_melodia(v, semente="y", motivico=False)
+    assert [n.midi for n in a.notas] == [n.midi for n in b.notas]
+
+def test_motivico_preserva_todos_os_invariantes():
+    """Nenhum ganho musical justifica perder a auditabilidade."""
+    for modo, graus in MODOS.items():
+        for v in CORPUS["versos"]:
+            for s in range(15):
+                f = gerar_melodia(v, modo=modo, semente=f"s{s}", motivico=True,
+                                  metros=CORPUS["metros"])
+                assert len(f.notas) == len(v["translit_silabas"])
+                classes = {(TONICA + g) % 12 for g in graus}
+                for n in f.notas:
+                    assert n.midi == TONICA + graus[n.grau_modal] + 12 * n.oitava
+                    assert n.midi % 12 in classes
+                    assert n.dur_base == n.dur
+
+def test_inicios_dos_pes_respeitam_a_superlonga():
+    """Em divan_2214 a superlonga 'xār' atravessa a fronteira entre os pés 3 e
+    4: as fronteiras têm de vir das posições métricas, não da contagem de
+    sílabas."""
+    from engine.generative import inicios_dos_pes
+    assert inicios_dos_pes(_verso("masnavi_1"), CORPUS["metros"]) == [0, 4, 8]
+    assert inicios_dos_pes(_verso("divan_2214"), CORPUS["metros"]) == [0, 4, 8, 10]
+    # sem metro declarado, cai em blocos de 4
+    assert inicios_dos_pes({"escansao": ["–"] * 11, "metro": "?"}, None) == [0, 4, 8]
+
+
+# --------------------------------------------------------------------------
 # Peneira, seleção de partida a frio e gosto aprendido
 # --------------------------------------------------------------------------
 

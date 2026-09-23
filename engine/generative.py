@@ -292,9 +292,31 @@ def _semente(*partes) -> random.Random:
     return random.Random(int(h[:16], 16))
 
 
+def inicios_dos_pes(verso: dict, metros: dict | None) -> list[int]:
+    """Índice da sílaba em que começa cada pé do metro.
+
+    Usa as posições métricas expandidas, e não a contagem de sílabas, porque a
+    superlonga ocupa duas posições e pode atravessar a fronteira entre pés —
+    em divan_2214 a sílaba 'xār' pertence ao pé 3 e ao 4. Sem metro declarado,
+    devolve blocos de 4 sílabas, que é o tamanho de pé dos metros do corpus.
+    """
+    escansao = verso["escansao"]
+    if not metros or verso.get("metro") not in metros:
+        return list(range(0, len(escansao), 4))
+    posicoes = expandir_escansao(escansao)
+    fatias = _pes_do_metro(metros[verso["metro"]], len(posicoes))
+    inicios = []
+    for _, ini, _ in fatias:
+        silaba = posicoes[ini][1]
+        if not inicios or silaba > inicios[-1]:
+            inicios.append(silaba)
+    return inicios
+
+
 def gerar_melodia(verso: dict, modo: str = "dorico", tonica_midi: int = 62,
                   entropia: float = 0.4, ambito: int = 9,
-                  semente: str = "diva") -> Frase:
+                  semente: str = "diva", motivico: bool = False,
+                  metros: dict | None = None) -> Frase:
     """
     Gera a melodia de UM verso.
     - DURAÇÕES: 100% do aruz (auditável).
@@ -304,6 +326,22 @@ def gerar_melodia(verso: dict, modo: str = "dorico", tonica_midi: int = 62,
 
     Toda nota devolvida satisfaz
     midi == tonica_midi + MODOS[modo][grau_modal] + 12*oitava.
+
+    MOTÍVICO
+    --------
+    Com `motivico=True`, o passeio do segundo pé em diante REUSA a sequência de
+    passos do primeiro, perturbada com probabilidade `entropia`, em vez de
+    recomeçar do zero.
+
+    Isto corrige um desequilíbrio medido do motor: o ritmo deriva dos pés de
+    Rumi, mas a melodia era cega a eles — o contorno do pé 2 repetia o do pé 1
+    em 5,81% dos casos contra 3,70% por puro acaso. A estrutura métrica que
+    organiza a duração passa a organizar também a altura, que é o que a tese do
+    projeto afirma e o código não fazia.
+
+    Fica desligado por padrão: é mudança de caráter musical, não correção de
+    defeito de auditoria. Passe `metros` para que os pés saiam do metro
+    declarado em vez de blocos fixos de 4 sílabas.
     """
     if modo not in MODOS:
         raise ValueError(f"modo desconhecido: {modo!r}; use um de {sorted(MODOS)}")
@@ -322,12 +360,33 @@ def gerar_melodia(verso: dict, modo: str = "dorico", tonica_midi: int = 62,
 
     frase = Frase(metro=verso.get("metro",""), modo=modo, tonica_midi=tonica_midi)
     grau_idx = 0  # começa na tônica
-    for silaba, simb, dur in zip(silabas, escansao, durs):
+
+    inicios = inicios_dos_pes(verso, metros) if motivico else []
+    motivo: list[int] = []        # passos do primeiro pé, a serem reusados
+    passos_do_pe: list[int] = []
+
+    for i, (silaba, simb, dur) in enumerate(zip(silabas, escansao, durs)):
+        if motivico and i in inicios:
+            if inicios.index(i) == 1 and passos_do_pe:
+                motivo = passos_do_pe[:]      # fecha o primeiro pé: vira motivo
+            passos_do_pe = []
+
+        reusado = None
+        if motivico and motivo:
+            # posição dentro do pé atual, para casar com o passo correspondente
+            anteriores = [x for x in inicios if x <= i]
+            dentro_do_pe = i - (anteriores[-1] if anteriores else 0)
+            if dentro_do_pe < len(motivo) and rng.random() > entropia:
+                reusado = motivo[dentro_do_pe]
+
+        if reusado is not None:
+            passo = reusado
         # regra de contorno: sílaba longa tende a subir/repousar; curta, a mover
-        if simb == "u":
+        elif simb == "u":
             passo = rng.choice([-2, -1, 1, 2]) if rng.random() < 0.5 + entropia/2 else rng.choice([-1, 1])
         else:
             passo = rng.choice([-1, 0, 0, 1]) if rng.random() > entropia else rng.choice([-3, -2, 2, 3])
+        passos_do_pe.append(passo)
         grau_idx = _passear(grau_idx, passo, teto)
         oitava, dentro = divmod(grau_idx, len(graus))
         frase.notas.append(NotaTrace(
