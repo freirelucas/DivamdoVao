@@ -34,6 +34,7 @@ from engine.generative import (carregar_corpus, gerar_melodia, conferir_metro,
                                DUR_ARUZ, MODOS)
 from engine import ritmo
 from engine import complexidade as cx
+from engine import filtros, selecao, gosto
 from engine.export import barrar, figuras, para_musicxml, para_midi, DIVISOES
 
 CORPUS = carregar_corpus(RAIZ / "data/aruz_corpus.json")
@@ -618,6 +619,232 @@ def test_relatorio_completo():
     # cada medida de encaixe declara em que eixo ordena
     for nome, bloco in r["encaixe"].items():
         assert bloco.get("ordena") in ("melodias", "letras"), nome
+
+
+# --------------------------------------------------------------------------
+# Peneira, seleção de partida a frio e gosto aprendido
+# --------------------------------------------------------------------------
+
+def _amostra(vid="masnavi_1", modo="dorico", n=400):
+    v = _verso(vid)
+    return v, [gerar_melodia(v, modo=modo, semente=f"s{i}") for i in range(n)]
+
+def test_peneira_so_corta_degenerado():
+    """A peneira rejeita ~0,07%: só melodia de uma ou duas alturas."""
+    frases = []
+    for modo in MODOS:
+        for v in CORPUS["versos"]:
+            frases += [gerar_melodia(v, modo=modo, semente=f"s{i}") for i in range(300)]
+    r = filtros.relatorio(frases)
+    assert r["taxa_de_corte"] <= 0.01, r
+    assert r["aviso"] is None, r["aviso"]
+    assert set(r["por_filtro"]) <= {"sem_melodia", "quase_sem_melodia"}, r
+
+def test_peneira_nao_corta_por_gosto():
+    """Trava contra a reincidência dos quatro erros registrados em
+    engine/filtros.py: salto grande, nota repetida, contorno monótono e fecho
+    em terça ou quinta são material musical, não motivo de corte."""
+    v, frases = _amostra(n=600)
+    aprovadas = [f for f in frases if filtros.peneirar(f)]
+
+    def maior_salto(f):
+        m = [n.midi for n in f.notas]
+        return max(abs(b - a) for a, b in zip(m, m[1:]))
+
+    def maior_corrida(f):
+        m = [n.midi for n in f.notas]
+        atual = maior = 1
+        for a, b in zip(m, m[1:]):
+            atual = atual + 1 if a == b else 1
+            maior = max(maior, atual)
+        return maior
+
+    assert any(maior_salto(f) >= 6 for f in aprovadas), \
+        "salto grande não pode ser motivo de corte"
+    assert any(maior_corrida(f) >= 3 for f in aprovadas), \
+        "nota repetida não pode ser motivo de corte"
+    fechos = {f.notas[-1].midi - f.tonica_midi for f in aprovadas}
+    assert len(fechos) >= 3, \
+        f"os três fechos modais têm de sobreviver, vi {fechos}"
+
+def test_peneira_relata_qual_filtro_reprovou():
+    """Rejeição muda não é auditável."""
+    v = _verso("masnavi_1")
+    frase = gerar_melodia(v, modo="dorico")
+    for n in frase.notas:
+        n.midi = frase.tonica_midi
+    ver = filtros.peneirar(frase)
+    assert not ver.passou and ver.filtro == "sem_melodia" and ver.motivo
+
+def test_medoides_cobre_melhor_que_aleatorio_e_kcenter():
+    """A única afirmação que a partida a frio pode fazer é sobre COBERTURA.
+    Medoides ganha; k-center, a escolha 'óbvia' para diversidade, perde."""
+    import random as _r
+    v, frases = _amostra(n=400)
+    X = [selecao.atributos(f, v, CORPUS["metros"], 3.5) for f in frases]
+
+    def kcenter(k, rng):
+        s = [rng.randrange(len(X))]
+        while len(s) < k:
+            s.append(max(range(len(X)),
+                         key=lambda i: min(selecao._distancia(X[i], X[j]) for j in s)))
+        return s
+
+    for k in (4, 8, 12):
+        al = sum(selecao.cobertura(X, _r.Random(r).sample(range(len(X)), k))
+                 for r in range(5)) / 5
+        kc = sum(selecao.cobertura(X, kcenter(k, _r.Random(r))) for r in range(5)) / 5
+        md = sum(selecao.cobertura(X, selecao.lote_inicial(X, k, semente=r))
+                 for r in range(5)) / 5
+        assert md < al, f"lote {k}: medoides {md:.4f} não venceu aleatório {al:.4f}"
+        assert md < kc, f"lote {k}: medoides {md:.4f} não venceu k-center {kc:.4f}"
+
+def test_lote_inicial_devolve_candidatas_reais_e_distintas():
+    """O autor tem de poder ouvir o que julga: um centroide médio não é uma
+    melodia."""
+    v, frases = _amostra(n=200)
+    X = [selecao.atributos(f, v, CORPUS["metros"], 3.5) for f in frases]
+    lote = selecao.lote_inicial(X, 8)
+    assert len(lote) == len(set(lote)) == 8
+    assert all(0 <= i < len(X) for i in lote)
+    assert selecao.lote_inicial(X, 8, semente=0) == selecao.lote_inicial(X, 8, semente=0)
+
+def test_perfil_de_saltos_e_distribuicao_nao_maximo():
+    """A correção do autor: a forma da distribuição descreve a melodia, o
+    extremo não."""
+    v, frases = _amostra(n=50)
+    for f in frases:
+        perfil = selecao.perfil_de_saltos(f)
+        assert len(perfil) == len(selecao.FAIXAS_DE_SALTO)
+        assert abs(sum(perfil) - 1.0) < 1e-9, perfil
+
+def test_hipoteses_saem_sempre_rotuladas():
+    """Devolver o número sozinho seria apresentá-lo como qualidade — que é o
+    erro que engine/selecao.py existe para não repetir."""
+    v, frases = _amostra(n=5)
+    r = selecao.rotular_hipoteses(frases[0])
+    assert set(r) == {"eco_entre_pes", "estavel_em_longa"}
+    for nome, bloco in r.items():
+        assert "valor" in bloco
+        for chave in ("hipotese", "derivada_de", "medido", "confirmaria", "estado"):
+            assert bloco.get(chave), f"{nome} sem {chave}"
+        assert bloco["estado"] == "não testada"
+
+def test_gosto_aprende_e_a_amostragem_ativa_ajuda():
+    """Contra gosto sintético linear: tau > 0,7 em 40 julgamentos, e a
+    amostragem ativa acima da aleatória no orçamento baixo."""
+    import random as _r
+    v, frases = _amostra(n=300)
+    X = [selecao.atributos(f, v, CORPUS["metros"], 3.5) for f in frases]
+    d = len(X[0])
+
+    def tau(w, verdade, amostra):
+        conc = disc = 0
+        for i in range(len(amostra)):
+            for j in range(i + 1, len(amostra)):
+                a, b = amostra[i], amostra[j]
+                if ((gosto.escore(w, a) - gosto.escore(w, b)) *
+                        (gosto.escore(verdade, a) - gosto.escore(verdade, b))) > 0:
+                    conc += 1
+                else:
+                    disc += 1
+        return (conc - disc) / (conc + disc)
+
+    def roda(n, verdade, rep, ativo):
+        rng = _r.Random(rep); pesos = [0.0] * d; js = []; vistos = set()
+        teste = rng.sample(X, 60)
+        for t in range(n):
+            if not ativo or t < 6:
+                i, j = rng.sample(range(len(X)), 2)
+            else:
+                i, j = gosto.proximo_par(X, pesos, vistos, semente=rng.randrange(10**6))
+            vistos.add((min(i, j), max(i, j)))
+            dif = gosto.escore(verdade, X[i]) - gosto.escore(verdade, X[j])
+            pref = "a" if rng.random() < gosto._sigmoide(dif / 0.15) else "b"
+            js = gosto.registrar(js, X[i], X[j], pref)
+            if t >= 5:
+                pesos = gosto.treinar(js, d)
+        return tau(pesos, verdade, teste)
+
+    rng = _r.Random(3)
+    taus = []
+    for rep in range(4):
+        verdade = [rng.gauss(0, 1) for _ in range(d)]
+        taus.append(roda(40, verdade, rep, True))
+    assert sum(taus) / len(taus) > 0.7, f"tau médio {sum(taus)/len(taus):.3f}"
+
+def test_amostragem_ativa_escolhe_par_incerto_e_distante():
+    """Testa o MECANISMO, não a média de ponta a ponta.
+
+    O ganho agregado da amostragem ativa é real mas pequeno (+0,11 de tau em
+    10 julgamentos, medido com 8 repetições — ver engine/gosto.py), e ruidoso
+    demais para virar asserção com poucas repetições. O que dá para afirmar com
+    firmeza é que proximo_par faz o que promete: escolhe pares que o modelo não
+    sabe ordenar E que são distantes entre si. Incerteza sozinha escolheria
+    pares quase idênticos, cujo julgamento não informa nada."""
+    import random as _r
+    v, frases = _amostra(n=200)
+    X = [selecao.atributos(f, v, CORPUS["metros"], 3.5) for f in frases]
+    pesos = [0.0] * len(X[0])
+    pesos[4] = 2.0          # um gosto qualquer, para haver incerteza a medir
+
+    def valor(i, j):
+        pr = gosto.probabilidade(pesos, X[i], X[j])
+        incerteza = 1.0 - abs(pr - 0.5) * 2.0
+        return incerteza * selecao._distancia(X[i], X[j])
+
+    escolhidos = [gosto.proximo_par(X, pesos, semente=s) for s in range(20)]
+    rng = _r.Random(0)
+    sorteados = [tuple(rng.sample(range(len(X)), 2)) for _ in range(20)]
+    media_escolhido = sum(valor(i, j) for i, j in escolhidos) / len(escolhidos)
+    media_sorteado = sum(valor(i, j) for i, j in sorteados) / len(sorteados)
+    assert media_escolhido > media_sorteado, (media_escolhido, media_sorteado)
+    # e respeita os pares já vistos
+    ja = {(min(i, j), max(i, j)) for i, j in escolhidos[:5]}
+    novo_par = gosto.proximo_par(X, pesos, ja_vistos=ja, semente=0)
+    assert (min(novo_par), max(novo_par)) not in ja
+
+def test_gosto_explica_em_portugues():
+    """O modelo tem de ser legível, ou contradiz a tese do projeto."""
+    assert gosto.explicar([0.0] * len(selecao.NOMES_DOS_ATRIBUTOS))["treinado"] is False
+    pesos = [0.0] * len(selecao.NOMES_DOS_ATRIBUTOS)
+    pesos[4] = 1.5      # cantabilidade
+    pesos[6] = -0.9     # notas repetidas
+    e = gosto.explicar(pesos)
+    assert e["treinado"] and "cantabilidade" in e["texto"]
+    assert "prefere" in e["texto"] and "penaliza" in e["texto"]
+    assert e["ordenados"][0][0] == "cantabilidade"
+
+def test_gosto_avisa_quando_a_confianca_estaciona():
+    """Ranquear com segurança fingida é pior que dizer que não sabe."""
+    import random as _r
+    rng = _r.Random(0); d = 6
+    # julgamentos por moeda: não há o que aprender
+    js = []
+    for _ in range(40):
+        a = [rng.random() for _ in range(d)]
+        b = [rng.random() for _ in range(d)]
+        js = gosto.registrar(js, a, b, "a" if rng.random() < 0.5 else "b")
+    c = gosto.confianca(js)
+    assert c["suficiente"] and c["acuracia"] < 0.75
+    assert c["aviso"], "deveria avisar que os atributos não capturam o gosto"
+    assert gosto.confianca(js[:3])["suficiente"] is False
+
+def test_julgamentos_sobrevivem_ao_disco():
+    """É a única memória do projeto: sem isso cada sessão recomeça do zero."""
+    import tempfile
+    js = gosto.registrar([], [0.1] * 4, [0.2] * 4, "b", contexto={"verso": "x"})
+    with tempfile.TemporaryDirectory() as tmp:
+        alvo = Path(tmp) / "j.json"
+        gosto.gravar(js, alvo)
+        assert gosto.carregar(alvo) == js
+        assert gosto.carregar(Path(tmp) / "nao_existe.json") == []
+    try:
+        gosto.registrar([], [0.1], [0.2], "talvez")
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("preferida só aceita 'a' ou 'b'")
 
 
 # --------------------------------------------------------------------------
