@@ -34,7 +34,7 @@ from engine.generative import (carregar_corpus, gerar_melodia, conferir_metro,
                                DUR_ARUZ, MODOS)
 from engine import ritmo
 from engine import complexidade as cx
-from engine import filtros, selecao, gosto
+from engine import filtros, selecao, gosto, pipeline
 from engine.export import barrar, figuras, para_musicxml, para_midi, DIVISOES
 
 CORPUS = carregar_corpus(RAIZ / "data/aruz_corpus.json")
@@ -903,6 +903,88 @@ def test_julgamentos_sobrevivem_ao_disco():
         pass
     else:
         raise AssertionError("preferida só aceita 'a' ou 'b'")
+
+
+# --------------------------------------------------------------------------
+# Pipeline: o encadeamento dos dez estágios
+# --------------------------------------------------------------------------
+
+def test_pipeline_ponta_a_ponta():
+    v = _verso("masnavi_1")
+    res = pipeline.executar(v, CORPUS["metros"], modo="dorico", n=60, k=5)
+    assert res["geradas"] == 60
+    assert res["aprovadas"] <= 60 and res["aprovadas"] >= 59, res["peneira"]
+    assert len(res["escolhidas"]) == 5
+    assert res["conferencia_metro"]["conforme"] is True
+    for c in res["escolhidas"]:
+        assert c.passou and c.atributos and c.medidas
+        assert len(c.frase.notas) == len(v["translit_silabas"])
+
+def test_pipeline_sem_julgamento_ordena_por_cobertura():
+    """Enquanto não houver julgamento, o pipeline não pode afirmar qualidade —
+    e o motivo da ordem tem de dizer isso."""
+    v = _verso("masnavi_1")
+    res = pipeline.executar(v, CORPUS["metros"], n=60, k=4, julgamentos=[])
+    assert "medoides" in res["ordenacao"]
+    assert "não afirma qualidade" in res["ordenacao"]
+    assert all(c.escore is None for c in res["escolhidas"])
+
+def test_pipeline_com_julgamento_ordena_por_gosto():
+    import random as _r
+    v = _verso("masnavi_1")
+    base = pipeline.executar(v, CORPUS["metros"], n=60, k=60, julgamentos=[])
+    vet = [c.atributos for c in base["escolhidas"]]
+    rng = _r.Random(0)
+    verdade = [rng.gauss(0, 1) for _ in range(len(vet[0]))]
+    js = []
+    for _ in range(20):
+        i, j = rng.sample(range(len(vet)), 2)
+        pref = "a" if gosto.escore(verdade, vet[i]) > gosto.escore(verdade, vet[j]) else "b"
+        js = gosto.registrar(js, vet[i], vet[j], pref)
+    res = pipeline.executar(v, CORPUS["metros"], n=60, k=4, julgamentos=js)
+    assert "gosto aprendido" in res["ordenacao"]
+    escores = [c.escore for c in res["escolhidas"]]
+    assert all(e is not None for e in escores)
+    assert escores == sorted(escores, reverse=True), escores
+
+def test_pipeline_leva_as_hipoteses_rotuladas_ate_a_saida():
+    """Em nenhum ponto da cadeia a hipótese pode virar nota de qualidade."""
+    v = _verso("divan_2214")
+    res = pipeline.executar(v, CORPUS["metros"], n=40, k=3)
+    for c in res["escolhidas"]:
+        hip = c.medidas["hipoteses"]
+        assert set(hip) == {"eco_entre_pes", "estavel_em_longa"}
+        for bloco in hip.values():
+            assert bloco["estado"] == "não testada" and bloco["hipotese"]
+
+def test_pipeline_estagios_sao_puros_e_encadeaveis():
+    """Cada estágio é função sobre a lista de candidatas, testável sozinho."""
+    v = _verso("masnavi_1")
+    todas = pipeline.gerar(v, "dorico", 30, CORPUS["metros"])
+    assert len(todas) == 30 and all(c.veredito is None for c in todas)
+    aprovadas = pipeline.peneirar(todas)
+    assert all(c.veredito is not None for c in todas), "todas marcadas"
+    assert all(c.passou for c in aprovadas)
+    pipeline.medir(aprovadas, CORPUS["metros"])
+    assert all(c.atributos for c in aprovadas)
+    escolhidas = pipeline.ordenar(aprovadas, 3)
+    assert len(escolhidas) == 3
+
+def test_pipeline_cli_exporta_com_rastro_de_selecao():
+    """A partitura exportada tem de dizer por que aquela candidata saiu."""
+    with tempfile.TemporaryDirectory() as tmp:
+        r = subprocess.run(
+            [sys.executable, "engine/pipeline.py", "--verso", "masnavi_1",
+             "--n", "40", "--lote", "2", "--export", "musicxml,midi",
+             "--out", tmp], cwd=RAIZ, capture_output=True, text=True)
+        assert r.returncode == 0, r.stderr
+        auditorias = sorted(Path(tmp).glob("*_auditoria.json"))
+        assert len(auditorias) == 2, [p.name for p in Path(tmp).iterdir()]
+        d = json.loads(auditorias[0].read_text("utf-8"))
+        assert d["selecao"]["motivo_da_ordem"]
+        assert d["selecao"]["geradas"] == 40
+        assert d["complexidade"]["hipoteses"]
+        assert d["regra_altura"] and d["conferencia_metro"]["conforme"]
 
 
 # --------------------------------------------------------------------------
