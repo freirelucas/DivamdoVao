@@ -55,23 +55,17 @@
     },
     {
       "id": "divan_2214",
-      "obra": "Divã de Shams, gazal 2214 (abertura)",
-      "metro": "ramal_mahzuf",
+      "obra": "Divã de Shams, gazal 323 (abertura)",
+      "metro": "rajaz_mosamman_matvi_makhbun",
       "persa": "آن نفسی که با خودی یار چو خار آیدت",
       "translit_silabas": ["ān","na","fa","sī","ke","bā","xo","dī","yār","čo","xār","ā","ya","dat"],
-      "escansao": ["–","u","–","–","u","–","–","–","u","–","–","–","u","–"],
+      "escansao": ["–","u","u","–","u","–","u","–","=","u","=","–","u","–"],
       "glosa_pt": "Aquele instante em que, contigo, o amado é como espinho",
       "imagem": "dois numa só alma — o instante do encontro",
       "dominio_publico": true,
-      "metro_conferido": false,
-      "_nota": "Escansão aproximada para fins de protótipo; conferir com edição Foruzanfar antes de uso final.",
-      "_divergencia_metro": "A escansão registrada aqui não se decompõe nos pés de ramal_mahzuf ('–u––'): os pés 2 e 3 saem como 'u–––', que é justamente o pé do hazaj (mafāʿīlun), já declarado acima. Ou o rótulo do metro está errado, ou a escansão está — é questão de edição crítica, não de código, e por isso nada aqui foi 'corrigido' automaticamente.",
-      "_proposta": "PROPOSTA, não aplicada — ver docs/PROPOSTA_divan_2214.md. O verso é o gazal 323 do Divã de Shams (não 2214), e o vazn registrado pela fonte é rajaz mosamman matvi makhbun. A escansão proposta abaixo casa 16/16 posições com esse vazn, conferida por conferir_metro(). Muda 5 das 14 posições; a duração total segue 12.0 quarters. Só entra em vigor com o aval do autor.",
-      "_proposta_metro": "rajaz_mosamman_matvi_makhbun",
-      "_proposta_escansao": ["–","u","u","–","u","–","u","–","=","u","=","–","u","–"],
-      "_proposta_obra": "Divã de Shams, gazal 323 (abertura)",
-      "_proposta_fonte": "https://ganjoor.net/moulavi/shams/ghazalsh/sh323",
-      "_proposta_ressalva": "A numeração do Ganjoor é amplamente usada, mas a referência canônica é a edição Foruzanfar, não consultada diretamente. A escansão não depende dessa conferência (deriva do vazn e das regras de quantidade silábica); o id e a atribuição dependem."
+      "metro_conferido": true,
+      "_escansao_conferida": "Escansão conferida contra o vazn que a fonte registra para o gazal 323 do Divã de Shams: مفتعلن مفاعلن مفتعلن مفاعلن (رجز مثمن مطوی مخبون). Expandindo as superlongas nas suas duas posições métricas, casa 16/16 posições e 4/4 pés — ver docs/PROPOSTA_divan_2214.md e conferir_metro(). 'yār' e 'xār' são CVVC, portanto superlongas: são as primeiras do corpus a exercer o símbolo '='. Fonte: https://ganjoor.net/moulavi/shams/ghazalsh/sh323",
+      "_ressalva": "A numeração do Ganjoor é amplamente usada, mas a referência canônica é a edição Foruzanfar, não consultada diretamente. A escansão não depende dessa conferência (deriva do vazn e das regras de quantidade silábica); o número do gazal e a atribuição dependem."
     }
   ]
 }

@@ -234,33 +234,39 @@ def test_metro_de_pes_alternados():
     metro = CORPUS["metros"]["rajaz_mosamman_matvi_makhbun"]
     assert "padrao_pes" in metro and len(metro["padrao_pes"]) == 2
 
-def test_proposta_divan_confere_com_o_vazn():
-    """A escansão proposta em docs/PROPOSTA_divan_2214.md casa com o vazn
-    publicado — 16 posições, 4 pés. O corpus segue intacto: isto verifica a
-    proposta, não a aplica."""
+def test_divan_usa_a_escansao_conferida():
+    """A correção filológica está aplicada: o verso é o gazal 323, em rajaz
+    mosamman matvi makhbun, e a escansão casa 16/16 posições e 4/4 pés com o
+    vazn que a fonte registra (ver docs/PROPOSTA_divan_2214.md)."""
     v = _verso("divan_2214")
-    assert "_proposta_escansao" in v, "a proposta tem de estar registrada no corpus"
-    proposto = {
-        "metro": v["_proposta_metro"],
-        "escansao": v["_proposta_escansao"],
-        "translit_silabas": v["translit_silabas"],
-    }
-    r = conferir_metro(proposto, CORPUS["metros"])
+    assert v["metro"] == "rajaz_mosamman_matvi_makhbun", v["metro"]
+    assert v["metro_conferido"] is True
+    assert "323" in v["obra"], v["obra"]
+    assert not [k for k in v if k.startswith("_proposta")], "proposta já aplicada"
+    r = conferir_metro(v, CORPUS["metros"])
     assert r["conforme"], r["divergencias"]
     assert r["n_posicoes"] == 16, r["n_posicoes"]
     assert [pe["escansao"] for pe in r["pes"]] == ["–uu–", "u–u–", "–uu–", "u–u–"]
     # a superlonga 'xār' atravessa a fronteira entre os pés 3 e 4
     assert "xār" in r["pes"][2]["silabas"] and "xār" in r["pes"][3]["silabas"]
-    # e a correção não muda a duração total do verso, só o ritmo por dentro
-    assert sum(durar_por_aruz(v["_proposta_escansao"])) == \
-           sum(durar_por_aruz(v["escansao"])) == 12.0
 
-def test_corpus_atual_segue_intacto():
-    """Guarda contra aplicar a proposta sem querer: enquanto metro_conferido for
-    false, os campos vigentes são os antigos."""
+def test_divan_exerce_a_superlonga():
+    """São as primeiras superlongas do corpus: o símbolo estava definido em
+    DUR_ARUZ desde o início e nenhum dado o exercia."""
     v = _verso("divan_2214")
-    assert v["metro"] == "ramal_mahzuf", "a proposta não deve ter sido aplicada"
-    assert v["metro_conferido"] is False
+    assert v["escansao"].count("=") == 2
+    silabas_longas = [s for s, e in zip(v["translit_silabas"], v["escansao"]) if e == "="]
+    assert silabas_longas == ["yār", "xār"], silabas_longas
+    assert 1.5 in durar_por_aruz(v["escansao"])
+
+def test_correcao_preserva_a_duracao_do_verso():
+    """A correção muda o ritmo por dentro, não o tamanho: 12.0 quarters antes e
+    depois. O que muda é o compasso que o metro pede — de 7/8 para 3/4."""
+    v = _verso("divan_2214")
+    assert sum(durar_por_aruz(v["escansao"])) == 12.0
+    cn = cx.compasso_natural(v, CORPUS["metros"])
+    assert cn["compasso_sugerido"] == 3.0, cn
+    assert cn["duracao_do_pe"] == [3.0, 3.0], cn
 
 def test_metro_desconhecido_nao_explode():
     """Um metro não declarado vira divergência, não exceção."""
