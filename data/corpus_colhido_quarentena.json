@@ -1,0 +1,40 @@
+{
+ "_sobre": "O que NÃO entrou no corpus, e por quê. Esta lista é o mapa do que falta para ampliar a cobertura: cada entrada nomeia o pé ou o padrão ausente.",
+ "itens": [
+  {
+   "url": "https://ganjoor.net/moulavi/shams/ghazalsh/sh53",
+   "status": "quarentena",
+   "vazn": "مفتعلن مفتعلن مفتعلن فع",
+   "motivo": "nenhuma leitura casa com a tabela de metros publicados",
+   "n_coplas": 12
+  },
+  {
+   "url": "https://ganjoor.net/moulavi/shams/ghazalsh/sh92",
+   "status": "quarentena",
+   "vazn": "مفاعیل مفاعیل مفاعیل فعولن (هزج مثمن مکفوف محذوف)",
+   "motivo": "nenhuma leitura casa com a tabela de metros publicados",
+   "n_coplas": 12
+  },
+  {
+   "url": "https://ganjoor.net/moulavi/shams/ghazalsh/sh93",
+   "status": "quarentena",
+   "vazn": "مفاعیل مفاعیل مفاعیل فعولن (هزج مثمن مکفوف محذوف)",
+   "motivo": "nenhuma leitura casa com a tabela de metros publicados",
+   "n_coplas": 5
+  },
+  {
+   "url": "https://ganjoor.net/moulavi/shams/ghazalsh/sh94",
+   "status": "quarentena",
+   "vazn": "مفاعیل مفاعیل مفاعیل فعولن (هزج مثمن مکفوف محذوف)",
+   "motivo": "nenhuma leitura casa com a tabela de metros publicados",
+   "n_coplas": 15
+  },
+  {
+   "url": "https://ganjoor.net/moulavi/shams/ghazalsh/sh95",
+   "status": "quarentena",
+   "vazn": "مفاعیل مفاعیل مفاعیل فعولن (هزج مثمن مکفوف محذوف)",
+   "motivo": "nenhuma leitura casa com a tabela de metros publicados",
+   "n_coplas": 10
+  }
+ ]
+}

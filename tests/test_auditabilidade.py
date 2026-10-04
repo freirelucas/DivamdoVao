@@ -1467,12 +1467,24 @@ def test_colhedor_registra_a_variante_de_edicao():
     """O texto do Ganjoor não é o de toda edição. Fingir que é apagaria uma
     divergência real — a abertura do Masnavi difere entre o Ganjoor e Nicholson,
     que é a edição que o corpus feito à mão segue."""
-    from ferramentas.colher import extrair_poema, versos_do_poema
-    from engine.metrica import resolver_vazn, id_do_metro
-    poema = extrair_poema(_PAGINA_FIXTURE, "https://ganjoor.net/x/sh99")
-    r = resolver_vazn(poema["vazn"])
-    v = versos_do_poema(poema, r, id_do_metro(r))[0]
-    assert "Nicholson" in v["_origem"]["edicao"]
+    from ferramentas.colher import (EDICAO, colher, gravar, PENDENCIAS_HUMANAS)
+    assert "Nicholson" in EDICAO and "شکایت" in EDICAO
+    with tempfile.TemporaryDirectory() as tmp:
+        url = "https://ganjoor.net/t/sh1"
+        _semear_cache(tmp + "/cache", url, _PAGINA_FIXTURE)
+        c = colher([url], cache=Path(tmp) / "cache", espera=0)
+        corpus = json.loads(gravar(c, Path(tmp) / "saida")[0]
+                            .read_text(encoding="utf-8"))
+    # o texto completo mora no cabeçalho, uma vez; o verso aponta para ele.
+    # Copiá-lo em cada verso custava 2,35 MB dos 5,21 MB de uma colheita de 150
+    # gazais e deixava o arquivo ilegível — e o que importa é a ressalva estar
+    # escrita e ligada ao verso, não estar copiada.
+    assert "Nicholson" in corpus["_edicao"]
+    assert set(corpus["_pendencias_humanas"]) == set(PENDENCIAS_HUMANAS)
+    for v in corpus["versos"]:
+        assert v["_origem"]["edicao"].startswith("ver _edicao")
+        assert set(v["_pendencias_humanas"]) <= set(corpus["_pendencias_humanas"])
+        assert v["_pendencias_humanas"], "verso colhido sem pendência declarada"
 
 
 def test_colhedor_poe_em_quarentena_e_nao_adivinha():
@@ -1529,6 +1541,72 @@ def test_engine_inteiro_fica_offline():
         for proibido in ("urllib", "http.client", "socket", "requests", "ftplib"):
             assert not _re.search(rf"^\s*(import|from)\s+{_re.escape(proibido)}",
                                   fonte, _re.M), f"{mod.name} importa {proibido}"
+
+
+def test_corpus_colhido_versionado_confere_inteiro():
+    """O corpus colhido que está no repositório confere verso por verso.
+
+    São milhares de versos cujo ritmo deriva de metro publicado. Se um dia uma
+    mudança na tabela de pés, no portão de fonte dupla ou no motor quebrar
+    algum deles, é aqui que aparece — e não depois, numa canção.
+    """
+    arq = RAIZ / "data/corpus_colhido.json"
+    if not arq.exists():
+        return                                  # colheita é opcional no repo
+    from engine.generative import conferir_metro, gerar_melodia, silabas_do_verso
+    corpus = json.loads(arq.read_text(encoding="utf-8"))
+    vs, ms = corpus["versos"], corpus["metros"]
+    assert vs and ms
+
+    vistos = set()
+    for v in vs:
+        assert v["id"] not in vistos, f"id repetido: {v['id']}"
+        vistos.add(v["id"])
+        assert v["persa"].strip(), v["id"]
+        assert not any(x in v["persa"] for x in ("<", ">", "http")), v["id"]
+        assert v["metro"] in ms, f"{v['id']} cita metro ausente: {v['metro']}"
+        assert v["dominio_publico"] is True
+        conf = conferir_metro(v, ms)
+        assert conf["conforme"] is True, (v["id"], conf["divergencias"][:2])
+        # sem transliteração, o rastro usa posição — e nunca finge sílaba
+        rot, conferidas = silabas_do_verso(v)
+        assert conferidas is False and len(rot) == len(v["escansao"])
+
+    # uma melodia por metro, para garantir que todo metro colhido é tocável
+    for mid in ms:
+        v = next(x for x in vs if x["metro"] == mid)
+        assert len(gerar_melodia(v, metros=ms).notas) == len(v["escansao"])
+        assert "assinatura_afetiva" not in ms[mid], (
+            f"{mid}: a leitura afetiva do metro é do autor, a máquina não escreve")
+        assert ms[mid]["_fonte"]["padrao_publicado"]["codigo_elwell_sutton"]
+
+
+def test_comprimento_do_persa_acompanha_as_posicoes_do_metro():
+    """Conferência INDEPENDENTE da atribuição de metro, sem escandir nada.
+
+    Se o metro atribuído a cada verso estiver certo, um verso de 16 posições
+    tem de ser sistematicamente mais longo em caracteres que um de 10. Essa
+    correlação não usa a tabela de pés nem a tabela publicada: ela sai do
+    texto persa, que é a fonte. Medido na colheita de 150 gazais: r = 0,85 em
+    3.306 versos. Se cair muito, a extração de hemistíquio ou a atribuição de
+    metro regrediu.
+    """
+    import math
+    arq = RAIZ / "data/corpus_colhido.json"
+    if not arq.exists():
+        return
+    vs = json.loads(arq.read_text(encoding="utf-8"))["versos"]
+    if len({len(v["escansao"]) for v in vs}) < 2:
+        return                                  # sem variedade de metro, nada a medir
+    pares = [(len(v["escansao"]), len(v["persa"])) for v in vs]
+    n = len(pares)
+    mx = sum(a for a, _ in pares) / n
+    my = sum(b for _, b in pares) / n
+    cov = sum((a - mx) * (b - my) for a, b in pares)
+    vx = sum((a - mx) ** 2 for a, _ in pares)
+    vy = sum((b - my) ** 2 for _, b in pares)
+    r = cov / math.sqrt(vx * vy)
+    assert r > 0.7, f"correlação posições x caracteres caiu para {r:.3f}"
 
 
 if __name__ == "__main__":

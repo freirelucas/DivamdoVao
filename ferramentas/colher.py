@@ -73,6 +73,35 @@ ESPERA_PADRAO = 1.5        # segundos entre pedidos de rede
 TENTATIVAS = 4             # com recuo exponencial 2s, 4s, 8s
 
 
+# As ressalvas valem para TODO verso colhido, então vivem no cabeçalho do
+# arquivo e cada verso aponta para elas por chave. Repeti-las em cada verso
+# gastava 2,35 MB dos 5,21 MB de uma colheita de 150 gazais e deixava o arquivo
+# ilegível para revisão — e o que importa é que a ressalva esteja escrita e
+# ligada ao verso, não que esteja copiada.
+PENDENCIAS_HUMANAS = {
+ "translit_silabas": (
+   "O Ganjoor não publica transliteração silabada. Sem ela, o rastro de auditoria "
+   "rotula POSIÇÃO métrica ('·1', '·2'), não sílaba, e o relatório declara "
+   "silabas_conferidas: false. Inventar sílaba aqui seria o erro nº 3 do registro "
+   "em engine/filtros.py."),
+ "superlongas": (
+   "O metro fixa as posições métricas, não onde duas posições se fundem numa "
+   "sílaba superlonga — isso depende das palavras. A duração total não muda; muda "
+   "o agrupamento (uma nota de 1,5 em vez de duas de 1,0 e 0,5). Conferir exige o "
+   "texto romanizado."),
+ "glosa_e_imagem": (
+   "glosa_pt e imagem são leitura do autor sobre o verso, não deriváveis da fonte. "
+   "Ficam ausentes de propósito."),
+}
+
+EDICAO = (
+ "Texto conforme a edição que o Ganjoor publica, que NÃO é a de todo verso do "
+ "corpus feito à mão: a abertura do Masnavi aparece no Ganjoor como "
+ "بشنو این نی چون شکایت e nos versos masnavi_1/masnavi_2 como بشنو از نی چون حکایت, "
+ "a leitura de Nicholson. As duas são edições legítimas e escandem igual "
+ "(–u–––u–––u–); a variante fica registrada, não harmonizada à força.")
+
+
 # ---------------------------------------------------------------------------
 # rede, com cache e polidez
 # ---------------------------------------------------------------------------
@@ -226,22 +255,9 @@ def versos_do_poema(poema: dict, resolucao: dict, id_metro: str) -> list[dict]:
                     "hemistiquio": i + 1,
                     "vazn_registrado": resolucao["vazn"],
                     "colhido_por": "ferramentas/colher.py",
-                    "edicao": (
-                        "texto conforme a edição que o Ganjoor publica. NÃO é a mesma "
-                        "de todo verso do corpus feito à mão: a abertura do Masnavi, "
-                        "por exemplo, aparece aqui como بشنو این نی چون شکایت, e nos "
-                        "versos masnavi_1/masnavi_2 como بشنو از نی چون حکایت, a "
-                        "leitura de Nicholson. As duas são edições legítimas e escandem "
-                        "igual (–u–––u–––u–); a variante fica registrada, não "
-                        "harmonizada à força."),
+                    "edicao": "ver _edicao no cabeçalho do arquivo",
                 },
-                "_pendencias_humanas": [
-                    "translit_silabas: o Ganjoor não publica transliteração silabada; "
-                    "sem ela o rastro rotula POSIÇÃO métrica, não sílaba",
-                    "superlongas: o metro fixa as posições, não onde duas se fundem "
-                    "numa sílaba superlonga — exige o texto romanizado",
-                    "glosa_pt e imagem: leitura do autor, não derivável da fonte",
-                ],
+                "_pendencias_humanas": sorted(PENDENCIAS_HUMANAS),
             })
     return versos
 
@@ -330,10 +346,12 @@ def gravar(colheita: dict, destino: Path, nome: str = "corpus_colhido") -> list[
                    "auditoria rotula posição métrica."),
         "_colhido_por": "ferramentas/colher.py",
         "_relatorio_da_colheita": colheita["relatorio"],
-        "_pendencias_humanas": (
-            "Cada verso traz _pendencias_humanas com o que falta e por quê. Nada "
-            "disso impede o motor de rodar; tudo isso muda o que o projeto pode "
-            "AFIRMAR sobre o verso."),
+        "_pendencias_humanas": PENDENCIAS_HUMANAS,
+        "_sobre_pendencias": (
+            "Cada verso lista em _pendencias_humanas as CHAVES que se aplicam a ele; "
+            "o texto de cada uma está aqui. Nada disso impede o motor de rodar; tudo "
+            "isso muda o que o projeto pode AFIRMAR sobre o verso."),
+        "_edicao": EDICAO,
         "metros": colheita["metros"],
         "versos": colheita["versos"],
     }
