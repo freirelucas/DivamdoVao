@@ -1,0 +1,557 @@
+{
+ "_sobre": "Pontes entre os TOPOI da poesia árabe clássica e os registros da canção brasileira. Serve para explorar o corpus por tema e conceito: cada ponte traz as palavras árabes com que se garimpa o verso, e o que ela licencia musicalmente. É o artefato que transforma 3,8 milhões de versos num espaço de ideias de canção, em vez de uma pedreira de ritmo.",
+ "_por_que_declarar_estatuto": "A tentação deste projeto sempre foi a mesma: buscar uma autoridade para ancorar uma afirmação que é minha. engine/filtros.py guarda quatro casos em que isso aconteceu e a medição derrubou. Aqui o risco é maior, porque correspondência cultural soa erudita mesmo quando é invenção. Então cada ponte diz o que é: o que é fato da fonte, o que é comparação que a academia realmente faz, o que é genealogia CONTESTADA, e o que é leitura do autor. Uma ponte de estatuto 'leitura_autoral' não vale menos — vale como arte, e o autor assume. O que não se pode é disfarçá-la de fato.",
+ "_estatutos": {
+  "fato_da_fonte": "Propriedade estrutural documentada da poesia árabe. Pode sustentar derivação.",
+  "paralelo_formal_observavel": "As duas tradições têm, verificavelmente, a mesma propriedade formal. O paralelo é observável; a CONEXÃO histórica entre elas não está afirmada.",
+  "comparacao_academica": "Comparação que a literatura especializada de fato faz, com referência. É argumento publicado, não consenso.",
+  "genealogia_contestada": "Afirmação de descendência histórica que está em disputa aberta. NÃO pode sustentar derivação, e o projeto não deve se apoiar nela.",
+  "leitura_autoral": "Leitura do autor. Não é fato, é escolha artística — e fica declarada como tal."
+ },
+ "_como_usar": "ferramentas/garimpar.py busca os termos de 'busca' no índice do corpus (ferramentas/indexar_arabe.py) e devolve os hemistíquios candidatos já com metro, era, poeta e o ritmo derivado do aruz. O campo 'consequencia_musical' diz que camada aquela ponte autoriza mexer, e com que garantia.",
+ "pontes": [
+  {
+   "id": "atlal_saudade_de_lugar",
+   "topos": {
+    "nome": "aṭlāl",
+    "arabe": "أطلال",
+    "o_que_e": "Os vestígios do acampamento abandonado. O poeta para diante das marcas da morada onde a amada viveu, reconhece o lugar, e chora o que passou. O gesto é parar, reconhecer e lamentar — nessa ordem.",
+    "onde_aparece": "Abertura (nasīb) da qasida clássica. O exemplo canônico é a muʿallaqa de Imruʾ al-Qays, que começa قفا نبك — 'parai, choremos'.",
+    "fonte": "Estrutura tripartite da qasida: nasīb → raḥīl → gharaḍ. Documentada."
+   },
+   "registro_brasileiro": {
+    "nome": "saudade de lugar",
+    "o_que_e": "A canção que volta a um lugar que não existe mais e canta o que ficou dele: a rua, a janela, o morro, a casa. É a veia central do Clube da Esquina — a paisagem vista de uma janela que já não é a mesma — e atravessa a seresta e o samba de breque melancólico.",
+    "o_que_tem_em_comum": "Os dois começam parando diante de um resto material (a marca no chão, a parede, a esquina) e só depois nomeiam a perda. O objeto vem antes do sentimento."
+   },
+   "estatuto": "leitura_autoral",
+   "por_que": "O aṭlāl é fato documentado da qasida. A equivalência com a saudade brasileira é MINHA — nenhuma fonte liga as duas, e a semelhança pode ser só o fato banal de que humanos lamentam lugares perdidos em toda parte.",
+   "o_que_derrubaria": "Se, ao ler cem versos de aṭlāl garimpados, o autor achar que o gesto é retórico e protocolar (um exórdio obrigatório) e não um lamento de lugar, a ponte cai. Isso é decidível ouvindo e lendo, não argumentando.",
+   "busca": {
+    "palavras": [
+     "أطلال",
+     "طلل",
+     "ربع",
+     "دمنة",
+     "دمن",
+     "منازل",
+     "ديار",
+     "رسم",
+     "معاهد",
+     "قفا نبك"
+    ],
+    "glosa": [
+     "vestígios",
+     "vestígio (sing.)",
+     "morada",
+     "marca de habitação",
+     "idem (pl.)",
+     "moradas",
+     "lares",
+     "traço",
+     "lugares familiares",
+     "'parai, choremos'"
+    ]
+   },
+   "consequencia_musical": {
+    "camada": "forma e letra",
+    "efeito": "O nasīb é seção de abertura por definição estrutural: vira a cabeça da canção, antes do primeiro refrão.",
+    "garantia": "derivado (a posição do nasīb na qasida é fato da fonte); que ele soe como abertura de canção brasileira é leitura autoral."
+   },
+   "acesso": "lexical"
+  },
+  {
+   "id": "rahil_travessia",
+   "topos": {
+    "nome": "raḥīl",
+    "arabe": "رحيل",
+    "o_que_e": "A travessia. O poeta deixa os vestígios e descreve a jornada: a montaria, o deserto, a sede, o calor do meio-dia, a resistência do corpo. O material é físico e técnico — o animal é descrito com precisão de criador.",
+    "onde_aparece": "Segunda parte da qasida, entre o nasīb e o gharaḍ.",
+    "fonte": "Estrutura tripartite da qasida. Documentada."
+   },
+   "registro_brasileiro": {
+    "nome": "a retirada, a travessia do sertão",
+    "o_que_e": "O canto do deslocamento forçado pela seca: a estrada, a sede, o sol a pino, o animal, a chegada que pode não vir. Baião e toada de retirante; e, no cordel, o relato de viagem.",
+    "o_que_tem_em_comum": "Deserto e sertão não são metáfora um do outro: são o mesmo problema material — água, sombra, distância, bicho — e as duas poéticas descrevem esse problema com a mesma minúcia técnica, não com vaguidão lírica."
+   },
+   "estatuto": "leitura_autoral",
+   "por_que": "A estrutura do raḥīl é fato; a correspondência com a retirada nordestina é leitura minha. O que a sustenta é material (a mesma ecologia de escassez), não documental.",
+   "o_que_derrubaria": "Se os versos de raḥīl garimpados forem sobretudo gabolice sobre a qualidade da montaria (um gênero de ostentação), e não narrativa de travessia, a ponte muda de natureza — passa a apontar para o partido-alto de desafio, não para a toada de retirante.",
+   "busca": {
+    "palavras": [
+     "ناقة",
+     "راحلة",
+     "بادية",
+     "بيد",
+     "فلاة",
+     "سراب",
+     "ظمأ",
+     "هاجرة",
+     "ركب",
+     "مفاوز",
+     "سفر"
+    ],
+    "glosa": [
+     "camela",
+     "montaria",
+     "deserto",
+     "ermos",
+     "descampado",
+     "miragem",
+     "sede",
+     "calor do meio-dia",
+     "caravana",
+     "travessias perigosas",
+     "viagem"
+    ]
+   },
+   "consequencia_musical": {
+    "camada": "forma, levada e arranjo",
+    "efeito": "Seção do meio: é onde a canção pode mudar de levada e de densidade, porque a estrutura da fonte já marca uma mudança de assunto ali.",
+    "garantia": "derivado quanto à POSIÇÃO; a levada escolhida é autoral."
+   },
+   "acesso": "lexical"
+  },
+  {
+   "id": "hanin_firaq_saudade_de_pessoa",
+   "topos": {
+    "nome": "ḥanīn, shawq, firāq",
+    "arabe": "حنين · شوق · فراق",
+    "o_que_e": "O complexo do anseio pelo ausente. ḥanīn é o gemido de anseio (a palavra se usa para o som da camela que chama o filhote); shawq é o desejo que puxa; firāq é a separação consumada.",
+    "onde_aparece": "Transversal: gazal, nasīb, e como tema próprio. No corpus indexado há rótulos de tema para شوق (818 poemas) e فراق (552).",
+    "fonte": "Rótulos de tema do próprio corpus, medidos."
+   },
+   "registro_brasileiro": {
+    "nome": "saudade",
+    "o_que_e": "A palavra que o português tem e que se diz intraduzível.",
+    "o_que_tem_em_comum": "ḥanīn é o candidato mais próximo que encontrei em qualquer língua: anseio pelo ausente, com o corpo dentro (o som animal de chamar quem não vem). Não é sinônimo — firāq é o fato da separação, saudade é o estado de quem ficou —, mas é onde as duas línguas mais se aproximam."
+   },
+   "estatuto": "leitura_autoral",
+   "por_que": "A semelhança semântica é defensável e checável em dicionário, mas 'ḥanīn é saudade' é equivalência que eu afirmo. Línguas não têm sinônimos exatos entre si, e a tese da intraduzibilidade da saudade é ela mesma uma tradição discutível.",
+   "o_que_derrubaria": "Ler os versos de ḥanīn e achar que o afeto é de súplica ou de queixa (dirigido a alguém, pedindo volta) e não de estado contemplativo. Saudade não pede; anseio árabe muitas vezes pede.",
+   "busca": {
+    "palavras": [
+     "حنين",
+     "شوق",
+     "اشتياق",
+     "فراق",
+     "هجر",
+     "نوى",
+     "وجد",
+     "صبابة",
+     "لوعة"
+    ],
+    "glosa": [
+     "anseio",
+     "desejo/anseio",
+     "idem",
+     "separação",
+     "abandono",
+     "distanciamento",
+     "paixão-dor",
+     "paixão terna",
+     "ardor de dor"
+    ]
+   },
+   "consequencia_musical": {
+    "camada": "modo e melodia",
+    "efeito": "Nada automático. É a veia onde a hipótese tema→modo pode ser testada com material de sobra.",
+    "garantia": "hipótese rotulada — entra pelo mecanismo de HIPOTESES de engine/selecao.py, nunca como escore de qualidade."
+   },
+   "acesso": "lexical"
+  },
+  {
+   "id": "ghayth_a_chuva_que_salva",
+   "topos": {
+    "nome": "ghayth, rabīʿ",
+    "arabe": "غيث · ربيع",
+    "o_que_e": "A chuva como salvação e como medida de generosidade. Elogiar um homem comparando-o à chuva é o cumprimento mais alto da poesia árabe; e o verbo de 'regar' se usa para abençoar (سقى الله — 'que Deus regue aquele lugar').",
+    "onde_aparece": "Madḥ (elogio), descrição de paisagem, e em bênçãos sobre lugares perdidos — onde cruza com o aṭlāl.",
+    "fonte": "Topos documentado do madḥ e da waṣf."
+   },
+   "registro_brasileiro": {
+    "nome": "a chuva no sertão",
+    "o_que_e": "A chuva como acontecimento que decide a vida: espera, promessa, festa quando chega, desgraça quando não. Está no baião, na toada, no cordel, na profecia do inverno.",
+    "o_que_tem_em_comum": "Nas duas, chuva não é cenário nem clima: é agente moral. Quem dá chuva é bom; a terra regada é a imagem da bênção. A identidade é funcional, não imagética."
+   },
+   "estatuto": "leitura_autoral",
+   "por_que": "Os dois topoi são documentados cada um na sua tradição; ligá-los é meu. Mas esta é a ponte de que tenho mais confiança, porque não depende de semelhança poética e sim de uma mesma condição material — chuva escassa decide se se vive.",
+   "o_que_derrubaria": "Se na prática o غيث árabe aparecer quase sempre em elogio cortesão a patronos (fórmula de bajulação) e quase nunca ligado a terra e sobrevivência, a ponte vira outra coisa: elogio, não lavoura.",
+   "busca": {
+    "palavras": [
+     "غيث",
+     "مطر",
+     "سقى",
+     "ربيع",
+     "روض",
+     "وسمي",
+     "ديمة",
+     "حيا"
+    ],
+    "glosa": [
+     "chuva (salvadora)",
+     "chuva",
+     "regar/abençoar",
+     "primavera",
+     "prado",
+     "chuva da primavera",
+     "chuva mansa e contínua",
+     "chuva que dá vida"
+    ]
+   },
+   "consequencia_musical": {
+    "camada": "letra e afeto",
+    "efeito": "Material de imagem para a tradução: a imagem da fonte já carrega a função que a canção brasileira dá à chuva.",
+    "garantia": "leitura autoral, declarada."
+   },
+   "acesso": "lexical"
+  },
+  {
+   "id": "nay_qasab_pifano",
+   "topos": {
+    "nome": "nāy, qaṣab",
+    "arabe": "ناي · قصب",
+    "o_que_e": "A flauta de cana. Em Rumi ela abre o Masnavi: a cana cortada do canavial geme por ter sido separada — e é por isso que o som comove. Na poesia árabe, mizmār e qaṣab aparecem como instrumento e como imagem do lamento.",
+    "onde_aparece": "Transversal; central no sufismo.",
+    "fonte": "Abertura do Masnavi, que é o verso de onde este projeto partiu."
+   },
+   "registro_brasileiro": {
+    "nome": "o pífano",
+    "o_que_e": "Flauta de cana ou taquara das bandas de pífanos do Nordeste, soprada em dupla, com caixa e zabumba.",
+    "o_que_tem_em_comum": "São o mesmo objeto: tubo de cana soprado na extremidade, feito do que cresce na beira d'água, tocado em conjunto. A continuidade é material, não simbólica."
+   },
+   "estatuto": "paralelo_formal_observavel",
+   "por_que": "Que nāy e pífano sejam ambos flautas de cana sopradas é verificável — é organologia, não interpretação. O que NÃO está afirmado é parentesco histórico entre os dois instrumentos.",
+   "o_que_derrubaria": "Nada derruba o fato organológico. O que pode cair é a utilidade: se o timbre de pífano não servir ao material, a ponte é verdadeira e inútil.",
+   "busca": {
+    "palavras": [
+     "ناي",
+     "قصب",
+     "مزمار",
+     "شبابة",
+     "يراع"
+    ],
+    "glosa": [
+     "nāy",
+     "cana",
+     "flauta/instrumento de palheta",
+     "flauta de pastor",
+     "cana/caniço"
+    ]
+   },
+   "consequencia_musical": {
+    "camada": "arranjo e timbre",
+    "efeito": "Pífano como voz de abertura e contracanto, já que o verso fundador do projeto é sobre uma flauta de cana que lamenta ter sido cortada.",
+    "garantia": "o parentesco organológico é observável; a escolha de usá-lo é autoral."
+   },
+   "acesso": "lexical"
+  },
+  {
+   "id": "naqida_desafio",
+   "topos": {
+    "nome": "naqīḍa, mufākhara, hijāʾ",
+    "arabe": "نقيضة · مفاخرة · هجاء",
+    "o_que_e": "O contra-poema. Um poeta responde a outro usando O MESMO METRO E A MESMA RIMA, virando o argumento contra ele. A mufākhara é o duelo de gabos; o hijāʾ é a sátira que fere.",
+    "onde_aparece": "Gênero próprio, com casos célebres de duplas de rivais. No corpus indexado, هجاء tem rótulo de tema em 1.538 poemas.",
+    "fonte": "Forma documentada; e o constrangimento 'mesmo metro, mesma rima' é o que a define."
+   },
+   "registro_brasileiro": {
+    "nome": "o desafio: repente, cantoria de viola, partido-alto",
+    "o_que_e": "Dois cantadores improvisam alternadamente, obrigados à mesma métrica e ao mesmo esquema de rima, diante de plateia que julga.",
+    "o_que_tem_em_comum": "A regra é idêntica e é a regra que define os dois: responder DENTRO da forma do adversário. Não é semelhança de tema — é a mesma restrição formal fazendo o mesmo trabalho (provar domínio técnico sob pressão pública)."
+   },
+   "estatuto": "paralelo_formal_observavel",
+   "por_que": "Que naqīḍa e desafio imponham a mesma restrição — responder no metro e na rima do outro — é verificável nas duas tradições. É o paralelo mais forte desta tabela, porque é formal e não temático.",
+   "nota_sobre_genealogia": "A literatura brasileira de folclore AFIRMA componente árabe-ibérico na origem da cantoria ('cantorias de improviso franco-árabe-ibéricas'), e há estudo comparando o repente à regueifa galega. Mas são afirmações de uma literatura que costuma asseverar mais do que demonstra. O paralelo formal fica como observável; a descendência, NÃO afirmada.",
+   "o_que_derrubaria": "O paralelo formal não cai. O que cairia é qualquer tentativa de usá-lo como prova de descendência.",
+   "busca": {
+    "palavras": [
+     "نقيضة",
+     "مفاخرة",
+     "هجاء",
+     "فخر",
+     "مناقضة",
+     "مهاجاة"
+    ],
+    "glosa": [
+     "contra-poema",
+     "duelo de gabos",
+     "sátira",
+     "gabo próprio",
+     "contradita",
+     "troca de sátiras"
+    ]
+   },
+   "consequencia_musical": {
+    "camada": "forma e arranjo",
+    "efeito": "Autoriza uma forma de DUAS VOZES que se respondem na mesma métrica e cadência — e o projeto já tem a operação rítmica para isso (sobreposição/hoquetus em engine/ritmo.py).",
+    "garantia": "derivado do constrangimento formal da fonte, que é documentado."
+   },
+   "acesso": "lexical"
+  },
+  {
+   "id": "qafiya_radif_refrao",
+   "topos": {
+    "nome": "qāfiya (ár.) e radīf (pers./urdu)",
+    "arabe": "قافية · رديف",
+    "o_que_e": "qāfiya é a rima. Na qasida e no gazal o poema inteiro rima na mesma sílaba, do primeiro ao último bayt — monorrima —, e a letra que rima chama-se rawī. O radīf é a palavra ou expressão que se REPETE depois da rima em todo bayt.",
+    "onde_aparece": "qāfiya: qasida e gazal, por definição. No maṭlaʿ (bayt de abertura) os DOIS hemistíquios rimam — é o taṣrīʿ, que marca a abertura formalmente. radīf: gazal persa/urdu; gazal com radīf chama-se muraddaf.",
+    "fonte": "Definição da forma. Fato.",
+    "ERRO_CORRIGIDO": "Eu havia descrito o radīf como recurso árabe. É erro: radīf-como-palavra-que-se-repete é recurso do gazal PERSA, turco e urdu; na prosódia árabe رديف nomeia outra coisa (a vogal longa antes do rawī), e o árabe clássico não tem a palavra-refrão como recurso regular. A consequência é boa para o projeto e vale ser dita: o corpus PERSA já colhido (Rumi, 3.306 versos) traz refrão embutido na forma; o corpus ÁRABE dá só a rima. Para quem monta canção, isso não é detalhe — é a diferença entre ganhar um estribilho de graça e ter de inventá-lo."
+   },
+   "registro_brasileiro": {
+    "nome": "o refrão e o retorno",
+    "o_que_e": "A volta periódica da mesma frase, melódica e harmônica.",
+    "o_que_tem_em_comum": "Periodicidade obrigatória num ponto fixo da estrofe. E, no caso persa, mais que isso: o radīf é literalmente uma palavra que volta sempre no mesmo lugar — um refrão de uma palavra, já na fonte."
+   },
+   "estatuto": "fato_da_fonte",
+   "por_que": "Não é comparação: é uma propriedade formal medível no texto. A rima cai sempre no mesmo lugar métrico, e isso é periodicidade — a mesma coisa que uma cadência é.",
+   "o_que_derrubaria": "Nada, quanto ao fato. A consequência musical é que pode não funcionar.",
+   "busca": {
+    "palavras": [
+     "قافية",
+     "رديف",
+     "تصريع",
+     "مطلع",
+     "روي"
+    ],
+    "glosa": [
+     "rima",
+     "(termo técnico; ver ERRO_CORRIGIDO)",
+     "rima dupla na abertura",
+     "bayt de abertura",
+     "letra que rima"
+    ],
+    "aviso": "Estas palavras são METALINGUÍSTICAS: acham poemas que falam de rima, não poemas que têm rima. Não garimpe por elas. O acesso certo é engine/forma.py:rima_do_poema()."
+   },
+   "consequencia_musical": {
+    "camada": "HARMONIA",
+    "efeito": "Esta é a única ponte que autoriza mexer em HARMONIA com garantia: a rima do texto licencia a rima da harmonia. Cadência no fim de cada bayt; meia cadência no fim do ṣadr e cadência no fim do ʿajuz; o taṣrīʿ da abertura licencia tratar o primeiro bayt como cabeça, com cadência própria. E onde houver radīf (só no persa), ele licencia refrão de verdade — mesma palavra, mesma melodia, mesma cadência.",
+    "garantia": "derivado — a periodicidade está no texto, é contável, e não depende de nenhuma teoria harmônica para existir."
+   },
+   "acesso": "estrutural"
+  },
+  {
+   "id": "muwashshah_kharja_estribilho",
+   "topos": {
+    "nome": "muwashshaḥ e kharja",
+    "arabe": "موشح · خرجة",
+    "o_que_e": "Poema estrófico andaluz (séc. XI-XII), feito para canto, que termina numa kharja — fecho em registro mais baixo, às vezes em romance andaluz ou em árabe muito coloquial, muitas vezes na voz de uma mulher.",
+    "onde_aparece": "Era andalusa. No índice do corpus, العصر الأندلسي é uma era própria.",
+    "fonte": "Forma documentada."
+   },
+   "registro_brasileiro": {
+    "nome": "o estribilho que troca de registro",
+    "o_que_e": "O refrão que desce de registro: sai do português elaborado da estrofe e cai na fala, no bordão, no verso popular — e muitas vezes na voz de outro.",
+    "o_que_tem_em_comum": "O fecho estrófico muda de língua ou de registro, e é ele que a plateia canta."
+   },
+   "estatuto": "genealogia_contestada",
+   "por_que": "Aqui eu quase me enganei. É muito tentador dizer que a kharja é ancestral da lírica galego-portuguesa, logo da canção brasileira — fecharia a narrativa do projeto com um laço. Mas a bibliografia diz o contrário: há DISPUTA aberta (teses arabista contra romanista), parte dos especialistas sustenta que as kharjas 'romances' são árabe coloquial mal lido, e falta evidência de influência na lírica galega e trovadoresca. Vários estudiosos COMPARAM kharjas e cantigas de amigo por tema (amor e ausência) — comparação é o que existe; descendência não.",
+   "o_que_confirmaria": "Nada que eu possa fazer neste projeto. É questão de filologia andaluza, não de música.",
+   "USO_PERMITIDO": "A forma muwashshaḥ pode ser usada como MODELO FORMAL (estrofe + fecho em registro baixo), porque a forma existe e é documentada. O que está proibido é apresentar a canção como continuação de uma linhagem que vai da kharja ao Brasil. Se isso aparecer em texto de divulgação do projeto, é erro, e este campo existe para pegá-lo.",
+   "busca": {
+    "palavras": [
+     "موشح",
+     "موشحة",
+     "خرجة",
+     "قفل",
+     "دور"
+    ],
+    "glosa": [
+     "muwashshaḥ",
+     "idem (fem.)",
+     "kharja, o fecho",
+     "fecho estrófico",
+     "estrofe"
+    ],
+    "aviso": "Acesso por metadado: filtre pela era andalusa (العصر الأندلسي e المغرب والأندلس, 10.985 poemas no índice) em vez de buscar a palavra 'muwashshaḥ'."
+   },
+   "consequencia_musical": {
+    "camada": "forma",
+    "efeito": "Modelo de estrofe com fecho que troca de registro.",
+    "garantia": "a FORMA é fato documentado; a linhagem até o Brasil é contestada e não pode ser afirmada."
+   },
+   "acesso": "metadado"
+  },
+  {
+   "id": "khamr_madrugada",
+   "topos": {
+    "nome": "khamriyya",
+    "arabe": "خمريات",
+    "o_que_e": "A poesia do vinho: a taça, o copeiro, a taverna, a noite que não acaba. Em poeta sufi a mesma imagem é alegórica — a embriaguez é do amor divino, e ler ao pé da letra é erro de leitura.",
+    "onde_aparece": "Gênero próprio, forte no período abássida.",
+    "fonte": "Gênero documentado."
+   },
+   "registro_brasileiro": {
+    "nome": "o botequim e a madrugada",
+    "o_que_e": "A mesa de bar como lugar de confissão e de lucidez tardia; a noite que se estende; o copo como companhia.",
+    "o_que_tem_em_comum": "A bebida como moldura social de uma verdade que não se diz sóbrio, e o tempo noturno como tempo próprio."
+   },
+   "estatuto": "leitura_autoral",
+   "por_que": "Leitura minha, e com uma armadilha embutida: se o verso garimpado for de poeta sufi, a taça não é taça. Usar como canção de bar um verso que fala de aniquilamento místico é contrassenso — e o corpus não etiqueta isso.",
+   "o_que_derrubaria": "Descobrir, ao garimpar, que a maioria dos achados é alegórica. Então a ponte precisa de filtro por poeta, não por palavra.",
+   "busca": {
+    "palavras": [
+     "خمر",
+     "راح",
+     "كأس",
+     "ساقي",
+     "حان",
+     "صبوح",
+     "دن",
+     "سلافة"
+    ],
+    "glosa": [
+     "vinho",
+     "vinho",
+     "taça",
+     "copeiro",
+     "taverna",
+     "beber da manhã",
+     "jarra",
+     "vinho puro"
+    ]
+   },
+   "consequencia_musical": {
+    "camada": "letra e afeto",
+    "efeito": "Material de imagem — com a ressalva alegórica anexada ao achado.",
+    "garantia": "leitura autoral, com risco de leitura declarado."
+   },
+   "acesso": "lexical"
+  },
+  {
+   "id": "zuhd_fatalidade",
+   "topos": {
+    "nome": "zuhd",
+    "arabe": "زهد",
+    "o_que_e": "Poesia de renúncia: o mundo é passageiro, a morte é certa, o cabelo branco avisa, a riqueza não acompanha. Fórmula frequente: onde estão os que vinham antes.",
+    "onde_aparece": "Gênero próprio; cruza com o rithāʾ.",
+    "fonte": "Gênero documentado."
+   },
+   "registro_brasileiro": {
+    "nome": "o ABC, a fatalidade, a morte anunciada",
+    "o_que_e": "O canto que enumera e conclui que tudo acaba: o ABC de cordel, a toada de morte, o lamento do vaqueiro, a aceitação sem consolo.",
+    "o_que_tem_em_comum": "Os dois ENUMERAM para concluir — a lista de coisas que passaram é o argumento, não um enfeite. E o ABC é literalmente uma forma de enumerar."
+   },
+   "estatuto": "leitura_autoral",
+   "por_que": "Leitura minha. O que a sustenta é a estrutura argumentativa comum (enumeração que leva a uma conclusão fatalista), não o tema, que é universal.",
+   "o_que_derrubaria": "Se o zuhd árabe for sobretudo exortação religiosa (converta-se) e o ABC brasileiro sobretudo constatação (é assim e pronto), são afetos diferentes com a mesma superfície.",
+   "busca": {
+    "palavras": [
+     "زهد",
+     "دنيا",
+     "فناء",
+     "أجل",
+     "قبر",
+     "شيب",
+     "منون",
+     "أين من كان"
+    ],
+    "glosa": [
+     "renúncia",
+     "o mundo",
+     "perecimento",
+     "prazo da morte",
+     "túmulo",
+     "cabelo branco",
+     "a morte",
+     "'onde estão os que foram'"
+    ]
+   },
+   "consequencia_musical": {
+    "camada": "forma e letra",
+    "efeito": "Autoriza forma enumerativa — estrofes paralelas sobre o mesmo molde harmônico, que é como o ABC funciona.",
+    "garantia": "a enumeração é observável no texto; a escolha da forma é autoral."
+   },
+   "acesso": "lexical"
+  },
+  {
+   "id": "ritha_lamento",
+   "topos": {
+    "nome": "rithāʾ",
+    "arabe": "رثاء",
+    "o_que_e": "Elegia pelo morto. Tem convenções fortes: enumerar virtudes, acusar o destino, descrever a casa vazia. A tradição guarda nomes de mulheres poetas como suas maiores praticantes.",
+    "onde_aparece": "Um dos gharaḍ possíveis da qasida. 837 poemas com rótulo de tema no corpus.",
+    "fonte": "Gênero documentado; e é rótulo de tema medido no corpus."
+   },
+   "registro_brasileiro": {
+    "nome": "a incelença, o lamento, o canto de trabalho",
+    "o_que_e": "O canto fúnebre cantado por mulheres à beira do corpo; o lamento sem acompanhamento; a melodia que carrega o luto coletivo.",
+    "o_que_tem_em_comum": "Função ritual idêntica — canto diante do morto, em convenção pública, não em confidência — e, nas duas, voz feminina como praticante central."
+   },
+   "estatuto": "leitura_autoral",
+   "por_que": "A função ritual comum é observável nas duas tradições; chamá-las de equivalentes é meu.",
+   "o_que_derrubaria": "O rithāʾ é poesia de autor, escrita e assinada; a incelença é anônima e coletiva. Se essa diferença (autoria contra coletivo) for o que mais importa musicalmente, a ponte serve pouco.",
+   "busca": {
+    "palavras": [
+     "رثاء",
+     "بكى",
+     "نعى",
+     "مصاب",
+     "عزاء",
+     "ثكل",
+     "نواح"
+    ],
+    "glosa": [
+     "elegia",
+     "chorou",
+     "anunciou a morte",
+     "desgraça",
+     "pesar",
+     "perda de filho",
+     "lamentação"
+    ]
+   },
+   "consequencia_musical": {
+    "camada": "arranjo",
+    "efeito": "Autoriza voz quase sem acompanhamento, e coro feminino.",
+    "garantia": "leitura autoral, declarada."
+   },
+   "acesso": "lexical"
+  },
+  {
+   "id": "bahr_iqa_levada",
+   "topos": {
+    "nome": "baḥr e īqāʿ",
+    "arabe": "بحر · إيقاع",
+    "o_que_e": "A teoria musical árabe medieval trata metro poético (baḥr) e ciclo rítmico musical (īqāʿ) como matérias vizinhas, e al-Fārābī escreve sobre os dois no mesmo tratado.",
+    "onde_aparece": "Tratadística musical, não a poesia em si.",
+    "fonte": "al-Fārābī, Kitāb al-Mūsīqā al-Kabīr."
+   },
+   "registro_brasileiro": {
+    "nome": "a levada",
+    "o_que_e": "O padrão rítmico que define o gênero: baião, maracatu, partido-alto, toada.",
+    "o_que_tem_em_comum": "Um ciclo de durações que se repete e dá identidade."
+   },
+   "estatuto": "comparacao_academica",
+   "por_que": "A vizinhança entre metro e ciclo rítmico é tratada na teoria árabe medieval — logo, não é invenção minha. Mas que um baḥr específico peça uma levada específica, isso NÃO está nas fontes: é extrapolação.",
+   "o_que_confirmaria": "O projeto já tem a medida: o pé do ramal pede 7/8 por consistência de groove (0,5625 em 4/4 contra 1,0000 em 7/8). Rodar essa medida nos 16 buḥūr dá uma tabela metro→compasso derivada de medição, não de afirmação. É trabalho a fazer, e é mensurável.",
+   "busca": {
+    "palavras": [
+     "بحر",
+     "إيقاع",
+     "عروض",
+     "تفعيلة"
+    ],
+    "glosa": [
+     "metro",
+     "ciclo rítmico",
+     "prosódia",
+     "pé métrico"
+    ],
+    "aviso": "Acesso por metadado: o metro já vem rotulado em cada poema. Buscar a palavra بحر acha poemas sobre o MAR."
+   },
+   "consequencia_musical": {
+    "camada": "compasso e levada",
+    "efeito": "Tabela metro→compasso, obtida por medição de consistência de groove, como já se fez com o ramal.",
+    "garantia": "hipótese rotulada, com caminho de verificação definido e barato."
+   },
+   "acesso": "metadado"
+  }
+ ],
+ "_acessos": {
+  "lexical": "A ponte se garimpa por PALAVRA no texto: o topos aparece como imagem, logo há palavras que o nomeiam.",
+  "estrutural": "A ponte NÃO se garimpa por palavra, porque o que ela aponta é uma propriedade da forma, não uma imagem. Buscar a palavra 'rima' acha poemas que FALAM de rima, não poemas que TÊM rima — foi um erro meu de categoria, pego ao rodar a ferramenta. O acesso é por cálculo sobre o texto (engine/forma.py).",
+  "metadado": "A ponte se acessa pelo rótulo que o corpus já traz (metro, era, tema), não por busca no texto."
+ }
+}

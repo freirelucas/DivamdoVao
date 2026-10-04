@@ -7,3 +7,4 @@ engine/saida/
 .DS_Store
 .venv/
 .cache_ganjoor/
+.cache_arabe/

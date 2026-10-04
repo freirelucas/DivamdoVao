@@ -1609,6 +1609,158 @@ def test_comprimento_do_persa_acompanha_as_posicoes_do_metro():
     assert r > 0.7, f"correlação posições x caracteres caiu para {r:.3f}"
 
 
+# ---------------------------------------------------------------------------
+# FORMA E PONTES — a periodicidade do texto, e o que ela pode e não pode
+# licenciar na harmonia
+#
+# O aruz dá ritmo. Não diz nada sobre harmonia. A única coisa da fonte que
+# pode governar harmonia é PERIODICIDADE — a rima, que é contável no texto.
+# Estes testes travam exatamente a fronteira: onde cadenciar é derivado, quais
+# acordes é autoral, e uma genealogia contestada não licencia nada.
+# ---------------------------------------------------------------------------
+
+_GAZAL = [  # dístico = (ṣadr, ʿajuz); rima 'ar', radīf 'آیدت' (persa)
+    ("یار چو خار آیدت", "یار چه کار آیدت"),
+    ("خود تو شکار آیدت", "پیل شکار آیدت"),
+    ("بستهٔ ابر آیدت", "مه به کنار آیدت"),
+    ("یار کناره کند", "بادهٔ یار آیدت"),
+]
+
+
+def test_rima_medida_e_declara_a_cobertura():
+    """Monorrima é afirmação sobre o poema inteiro. Sem a cobertura, não se
+    sabe quanto a afirmação vale."""
+    from engine.forma import rima_do_poema
+    r = rima_do_poema(_GAZAL)
+    assert r["monorrima"] is True
+    assert r["n_caracteres"] >= 2
+    # a qāfiya é medida DEPOIS de descontar o radīf: a rima é 'ār', não
+    # 'ār āyadat'. Rima licencia cadência, radīf licencia refrão — confundir
+    # as duas apagaria a distinção que autoriza cada camada da música.
+    assert r["radif_descontado"] == "ایدت", r["radif_descontado"]
+    assert "ایدت" not in r["rima"], r["rima"]
+    assert 0.0 < r["cobertura"] <= 1.0
+    assert r["n_dísticos"] == 4
+    assert rima_do_poema([("um só verso", "")])["monorrima"] is False
+
+
+def test_radif_e_recurso_persa_e_a_medida_sabe_disso():
+    """Erro corrigido: radīf-como-palavra-que-volta é do gazal persa/urdu, não
+    do árabe clássico. A medida acha no persa e a nota diz isso.
+
+    Medido: 58,6% dos 145 gazais persas colhidos têm radīf; numa amostra de
+    1.200 poemas árabes, 0,0%. A previsão da correção se confirmou.
+    """
+    from engine.forma import radif_do_poema
+    d = radif_do_poema(_GAZAL)
+    assert d["tem_radif"] is True
+    # normalizar_fim mapeia آ -> ا de propósito: a rima árabe e persa se mede
+    # por consoantes e vogais longas, e a grafia da hamza varia
+    assert d["radif"] == "ایدت", d["radif"]
+    assert "persa" in d["nota"]
+    # sem nada antes da palavra repetida não é radīf, é o poema inteiro igual
+    assert radif_do_poema([("a", "x"), ("b", "x")])["tem_radif"] is False
+
+
+def test_tasri_marca_a_abertura():
+    from engine.forma import radif_do_poema, rima_do_poema, tem_tasri
+    r = rima_do_poema(_GAZAL)["rima"]
+    d = radif_do_poema(_GAZAL)["radif"]
+    assert tem_tasri(_GAZAL[0], r, d) is True
+    assert tem_tasri(("nada a ver", _GAZAL[0][1]), r, d) is False
+    assert tem_tasri(_GAZAL[0], "") is False
+    # sem informar o radīf, o fim do verso é 'ایدت' e não a rima 'ار': dá
+    # falso-negativo. É por isso que o parâmetro existe, e não por simetria.
+    assert tem_tasri(_GAZAL[0], r) is False
+
+
+def test_cadencia_cai_onde_cai_a_rima():
+    from engine.forma import cadencias
+    c = cadencias(_GAZAL)
+    meias = [p for p in c["pontos"] if p["tipo"] == "meia cadência"]
+    fechos = [p for p in c["pontos"] if p["tipo"] == "cadência"]
+    assert len(meias) == len(fechos) == 4
+    assert all(p["em"] == "fim do ṣadr" for p in meias)
+    assert all(p["em"] == "fim do ʿajuz" for p in fechos)
+    assert c["cabeca_separada"] is True            # há taṣrīʿ
+    assert c["refrao_dado_pela_fonte"] is True     # há radīf
+
+
+def test_projeto_nunca_afirma_que_a_harmonia_deriva_da_fonte():
+    """O invariante mais importante deste módulo.
+
+    O aruz não diz nada sobre harmonia, e a música clássica árabe e persa é
+    modal. Se algum dia a saída passar a apresentar a escolha de acordes como
+    derivada da fonte, o projeto terá cometido a fabricação que
+    engine/filtros.py registra — e este teste cai.
+    """
+    from engine.forma import cadencias
+    g = cadencias(_GAZAL)["_garantia"]
+    assert g["o_lugar_das_cadencias"].startswith("DERIVADO")
+    assert g["quais_acordes"].startswith("AUTORAL")
+    assert "aruz não diz nada sobre harmonia" in g["quais_acordes"]
+    assert "autor" in g["quais_acordes"]
+
+
+def test_pontes_declaram_estatuto_acesso_e_garantia():
+    """Toda ponte diz o que é e como se acessa. Correspondência cultural soa
+    erudita mesmo quando é invenção, e sete das doze pontes são leitura do
+    autor."""
+    pontes = json.loads((RAIZ / "data/pontes.json").read_text(encoding="utf-8"))
+    validos = set(pontes["_estatutos"])
+    acessos = set(pontes["_acessos"])
+    assert pontes["pontes"], "sem pontes"
+    for p in pontes["pontes"]:
+        assert p["estatuto"] in validos, (p["id"], p["estatuto"])
+        assert p["acesso"] in acessos, (p["id"], p["acesso"])
+        assert p["por_que"].strip(), p["id"]
+        assert p["busca"]["palavras"], p["id"]
+        assert len(p["busca"]["palavras"]) == len(p["busca"]["glosa"]), p["id"]
+        assert p["consequencia_musical"]["garantia"].strip(), p["id"]
+        assert p.get("o_que_derrubaria") or p.get("o_que_confirmaria"), p["id"]
+
+
+def test_ponte_estrutural_avisa_que_a_busca_lexical_nao_serve():
+    """Buscar a palavra 'rima' acha poemas que FALAM de rima, não que TÊM rima.
+    Foi um erro meu de categoria, pego ao rodar a ferramenta; o aviso existe
+    para ninguém repetir."""
+    pontes = json.loads((RAIZ / "data/pontes.json").read_text(encoding="utf-8"))
+    for p in pontes["pontes"]:
+        if p["acesso"] in ("estrutural", "metadado"):
+            assert p["busca"].get("aviso"), p["id"]
+
+
+def test_genealogia_contestada_nao_licencia_derivacao():
+    """Uma descendência em disputa não pode sustentar afirmação sobre a música.
+
+    A tentação era dizer que a kharja andaluza é ancestral da lírica
+    galego-portuguesa, logo da canção brasileira — fecharia a narrativa com um
+    laço. A bibliografia diz que a questão está em disputa aberta e falta
+    evidência. Então a FORMA pode ser usada como modelo; a linhagem, não.
+    """
+    pontes = json.loads((RAIZ / "data/pontes.json").read_text(encoding="utf-8"))
+    contestadas = [p for p in pontes["pontes"]
+                   if p["estatuto"] == "genealogia_contestada"]
+    assert contestadas, "a ponte da kharja deve estar marcada como contestada"
+    for p in contestadas:
+        g = p["consequencia_musical"]["garantia"]
+        assert "contestada" in g or "não pode ser afirmada" in g, p["id"]
+        assert p.get("USO_PERMITIDO"), (
+            f"{p['id']}: ponte contestada tem de dizer o que É permitido usar")
+        assert "proibido" in p["USO_PERMITIDO"] or "não" in p["USO_PERMITIDO"]
+
+
+def test_termo_de_busca_e_normalizado_como_o_indice():
+    """O primeiro erro do garimpo: o índice guarda اطلال (alif simples) e quem
+    digita أطلال (com hamza) não achava nada — falha em silêncio, que é a pior.
+    """
+    from ferramentas.garimpar import _frase_fts
+    from ferramentas.indexar_arabe import sem_harakat
+    assert _frase_fts("أطلال") == '"اطلال"'
+    assert _frase_fts("قفا نبك") == '"قفا" "نبك"'
+    assert sem_harakat("أَطْلَالٌ") == "اطلال"
+
+
 if __name__ == "__main__":
     import traceback
     testes = [f for name, f in sorted(globals().items()) if name.startswith("test_")]
