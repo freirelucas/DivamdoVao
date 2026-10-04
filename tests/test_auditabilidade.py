@@ -1304,6 +1304,102 @@ def test_metrica_nao_toca_a_rede():
                               fonte, _re.M), f"engine/metrica.py importa {proibido}"
 
 
+# ---------------------------------------------------------------------------
+# VERSO SEM TRANSLITERAÇÃO CONFERIDA — o que o lote produz
+#
+# O Ganjoor publica o texto persa e o vazn, não a transliteração silabada.
+# Inventar sílaba para preencher o rastro seria a fabricação que
+# engine/filtros.py registra como erro nº 3. Então o rótulo passa a ser a
+# POSIÇÃO métrica, e o relatório declara que a sílaba não foi conferida.
+# ---------------------------------------------------------------------------
+
+def _verso_de_lote():
+    """Verso como a ingestão em lote o produz: persa + metro do vazn, sem
+    transliteração silabada."""
+    from engine.metrica import resolver_vazn, metro_para_corpus, id_do_metro
+    r = resolver_vazn("مفاعلن فعلاتن مفاعلن فعلن (مجتث مثمن مخبون محذوف)")
+    mid = id_do_metro(r)
+    metros = {mid: metro_para_corpus(r, "https://ganjoor.net/exemplo")}
+    verso = {"id": "lote_teste", "obra": "gazal de teste", "metro": mid,
+             "persa": "ای یار من", "escansao": r["escansao"],
+             "dominio_publico": True, "metro_conferido": True}
+    return verso, metros
+
+
+def test_verso_com_transliteracao_mantem_a_silaba_no_rastro():
+    """Onde a transliteração existe, nada muda: o rastro continua dizendo a
+    sílaba persa."""
+    from engine.generative import silabas_do_verso
+    v = _verso("masnavi_1")
+    rot, conferidas = silabas_do_verso(v)
+    assert conferidas is True
+    assert rot == v["translit_silabas"]
+    assert "beš" in rot[0] or rot[0] == v["translit_silabas"][0]
+
+
+def test_verso_sem_transliteracao_rotula_posicao_e_nao_inventa_silaba():
+    from engine.generative import silabas_do_verso, ROTULO_POSICIONAL
+    v, _ = _verso_de_lote()
+    rot, conferidas = silabas_do_verso(v)
+    assert conferidas is False
+    assert len(rot) == len(v["escansao"])
+    assert all(r.startswith(ROTULO_POSICIONAL) for r in rot)
+    assert rot[0] == "·1" and rot[-1] == f"·{len(v['escansao'])}"
+
+
+def test_transliteracao_parcial_e_recusada():
+    """Meia transliteração é pior que nenhuma: alinharia nota à sílaba errada.
+
+    Ou confere tudo, ou deixa vazio e o rastro usa a posição.
+    """
+    from engine.generative import silabas_do_verso
+    v, _ = _verso_de_lote()
+    v = dict(v); v["translit_silabas"] = ["ey", "yār"]
+    try:
+        silabas_do_verso(v)
+    except ValueError as e:
+        assert "parcial" in str(e)
+    else:
+        assert False, "transliteração parcial deveria ser recusada"
+
+
+def test_relatorio_declara_que_a_silaba_nao_foi_conferida():
+    """Quem lê a auditoria tem de saber que '·3' é posição, não sílaba."""
+    from engine.generative import gerar_melodia, relatorio_auditoria
+    v, metros = _verso_de_lote()
+    rel = relatorio_auditoria(gerar_melodia(v, metros=metros), v, metros)
+    c = rel["conferencia"]
+    assert c["silabas_conferidas"] is False
+    assert c["alinhado"] is True
+    assert "posição métrica" in c["rotulo_das_notas"]
+    # e o rastro segue completo: cada nota com símbolo do aruz e duração
+    for linha in rel["mapa_silaba_para_nota"]:
+        assert linha["aruz"] in DUR_ARUZ and linha["dur_base_quarter"] > 0
+
+    rel_conf = relatorio_auditoria(
+        gerar_melodia(_verso("masnavi_1"), metros=CORPUS["metros"]),
+        _verso("masnavi_1"), CORPUS["metros"])
+    assert rel_conf["conferencia"]["silabas_conferidas"] is True
+
+
+def test_pipeline_inteiro_roda_em_verso_de_lote():
+    """Ponta a ponta no verso que o lote produz: metro confere, pipeline anda,
+    partitura e MIDI saem."""
+    from engine.pipeline import executar
+    from engine.generative import gerar_melodia, relatorio_auditoria
+    from engine.export import escrever
+    v, metros = _verso_de_lote()
+    res = executar(v, metros, n=40, k=4, motivico=True)
+    assert res["conferencia_metro"]["conforme"] is True
+    assert len(res["escolhidas"]) == 4
+    f = gerar_melodia(v, metros=metros)
+    rel = relatorio_auditoria(f, v, metros)
+    with tempfile.TemporaryDirectory() as tmp:
+        escritos = escrever(f, rel, tmp, "lote")
+        nomes = {p.name for p in escritos}
+        assert {"lote.musicxml", "lote.mid", "lote_auditoria.json"} <= nomes
+
+
 if __name__ == "__main__":
     import traceback
     testes = [f for name, f in sorted(globals().items()) if name.startswith("test_")]

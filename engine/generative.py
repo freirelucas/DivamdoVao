@@ -132,6 +132,35 @@ def durar_por_aruz(escansao: list[str], final_longa: bool = True) -> list[float]
 EXPANSAO = {"u": ["u"], "–": ["–"], "=": ["–", "u"]}
 
 
+ROTULO_POSICIONAL = "·"   # prefixo dos rótulos de posição, que não são sílabas
+
+
+def silabas_do_verso(verso: dict) -> tuple[list[str], bool]:
+    """Devolve (rótulos por símbolo da escansão, sílabas conferidas?).
+
+    Verso escandido à mão traz 'translit_silabas' e o rastro de auditoria pode
+    dizer QUAL sílaba persa originou cada nota. Verso ingerido em lote do vazn
+    publicado não traz: o Ganjoor publica o texto persa, não a transliteração
+    silabada, e inventar sílaba seria exatamente o tipo de fabricação que
+    engine/filtros.py registra como erro.
+
+    Então, sem transliteração, o rótulo é a POSIÇÃO métrica — '·1', '·2' — e a
+    função devolve False. O rastro continua honesto e completo: diz que a nota
+    dura o que dura porque a posição 3 do metro é longa, o que é afirmação
+    sobre a fonte. Só não diz uma palavra que ninguém conferiu.
+    """
+    silabas = verso.get("translit_silabas") or []
+    n = len(verso["escansao"])
+    if len(silabas) == n:
+        return list(silabas), True
+    if silabas:
+        raise ValueError(
+            f"Verso {verso.get('id')}: {len(silabas)} sílabas x {n} símbolos de "
+            f"escansão. Transliteração parcial não é aceita — ou confere tudo, "
+            f"ou deixa o campo vazio e o rastro usa a posição métrica.")
+    return [f"{ROTULO_POSICIONAL}{i + 1}" for i in range(n)], False
+
+
 def expandir_escansao(escansao: list[str]) -> list[tuple[str, int]]:
     """Expande a escansão em posições métricas.
 
@@ -192,7 +221,7 @@ def conferir_metro(verso: dict, metros: dict) -> dict:
         return {"metro": nome, "conforme": False, "pes": [], "n_posicoes": 0,
                 "divergencias": [f"metro '{nome}' não declarado no corpus"]}
 
-    silabas = verso.get("translit_silabas", [])
+    silabas, _ = silabas_do_verso(verso)
     posicoes = expandir_escansao(verso["escansao"])
     fatias = _pes_do_metro(metro, len(posicoes))
     pes, divergencias = [], []
@@ -346,10 +375,7 @@ def gerar_melodia(verso: dict, modo: str = "dorico", tonica_midi: int = 62,
     if modo not in MODOS:
         raise ValueError(f"modo desconhecido: {modo!r}; use um de {sorted(MODOS)}")
     escansao = verso["escansao"]
-    silabas = verso["translit_silabas"]
-    if len(escansao) != len(silabas):
-        raise ValueError(
-            f"Verso {verso['id']}: {len(silabas)} sílabas x {len(escansao)} símbolos")
+    silabas, _conferidas = silabas_do_verso(verso)
 
     durs = durar_por_aruz(escansao)
     graus = MODOS[modo]
@@ -418,6 +444,7 @@ def relatorio_auditoria(frase: Frase, verso: dict, metros: dict | None = None) -
             "dur_base_quarter": n.dur_base, "dur_quarter": n.dur,
             "midi": n.midi, "grau_modal": n.grau_modal, "oitava": n.oitava
         })
+    _rotulos, _conferidas = silabas_do_verso(verso)
     rel = {
         "verso_id": verso["id"],
         "obra": verso.get("obra",""),
@@ -430,10 +457,15 @@ def relatorio_auditoria(frase: Frase, verso: dict, metros: dict | None = None) -
         "duracao_total_quarters": frase.duracao_total(),
         "mapa_silaba_para_nota": linhas,
         "conferencia": {
-            "n_silabas": len(verso["translit_silabas"]),
+            "n_silabas": len(_rotulos),
             "n_notas": len(frase.notas),
-            "alinhado": len(verso["translit_silabas"]) == len(frase.notas),
+            "alinhado": len(_rotulos) == len(frase.notas),
             "metro_conferido": verso.get("metro_conferido"),
+            "silabas_conferidas": _conferidas,
+            "rotulo_das_notas": ("sílaba transliterada do persa" if _conferidas else
+                                 "posição métrica do metro declarado — o verso foi "
+                                 "ingerido do vazn publicado e não tem transliteração "
+                                 "silabada conferida"),
         }
     }
     # compatibilidade: o nome antigo do campo continua disponível

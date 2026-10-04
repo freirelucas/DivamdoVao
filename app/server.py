@@ -40,7 +40,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 RAIZ = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(RAIZ))
 from engine.generative import (carregar_corpus, gerar_melodia,
-                               relatorio_auditoria, conferir_metro, MODOS)
+                               relatorio_auditoria, conferir_metro, MODOS, silabas_do_verso)
 from engine.ritmo import OPERACOES, conferir_rastro
 from engine.complexidade import relatorio as relatorio_complexidade, compasso_natural
 from engine.export import assinatura_de_compasso
@@ -102,12 +102,17 @@ class Handler(BaseHTTPRequestHandler):
                     # a conferência metro<->escansão viaja com o verso: a
                     # interface mostra quando a fonte não foi conferida, em vez
                     # de apresentar toda escansão como igualmente firme.
+                    _rotulos, _conferidas = silabas_do_verso(v)
                     versos.append({
                         "id": v["id"], "obra": v["obra"], "metro": v["metro"],
-                        "persa": v["persa"], "silabas": v["translit_silabas"],
+                        "persa": v["persa"], "silabas": _rotulos,
                         "escansao": v["escansao"], "glosa_pt": v.get("glosa_pt",""),
                         "imagem": v.get("imagem",""),
                         "metro_conferido": v.get("metro_conferido"),
+                        # verso ingerido em lote não tem transliteração silabada:
+                        # a tela precisa saber disso para rotular posição em vez
+                        # de mostrar '·1' como se fosse uma sílaba persa.
+                        "silabas_conferidas": _conferidas,
                         "conferencia_metro": conferir_metro(v, CORPUS["metros"]),
                     })
                 return self._send(200, json.dumps(
