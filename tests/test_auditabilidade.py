@@ -1145,6 +1145,165 @@ def test_cli_exporta_com_auditoria():
         assert rel["regra_altura"] and rel["conferencia_metro"]["conforme"]
 
 
+# ---------------------------------------------------------------------------
+# O VAZN VIRA ESCANSÃO — ingestão de metro com fonte dupla (engine/metrica.py)
+#
+# O gargalo do corpus era escandir verso a verso. Estes testes travam o que
+# torna o lote possível: o vazn publicado parseia nos pés do aruz, e a
+# escansão derivada só é aceita se CASAR COM A LITERATURA. O que não casa fica
+# em quarentena — o projeto não adivinha metro.
+# ---------------------------------------------------------------------------
+
+def test_arkan_silabas_batem_com_posicoes():
+    """Em todo pé, a superlonga '=' vale exatamente duas posições e nada mais."""
+    from engine.metrica import carregar_arkan, leituras_do_pe
+    arkan = carregar_arkan()
+    for nome, e in arkan.items():
+        if nome == "_meta":
+            continue
+        for l in leituras_do_pe(e):
+            assert len(l["padrao_silabas"]) == len(e["silabas"]) or \
+                   l["romanizacao"] != e["romanizacao"], nome
+            esperado = []
+            for s in l["padrao_silabas"]:
+                esperado += ["–", "u"] if s == "=" else [s]
+            assert esperado == l["padrao_posicoes"], \
+                f"{nome}/{l['romanizacao']}: {esperado} != {l['padrao_posicoes']}"
+
+
+def test_vazn_do_corpus_reproduz_a_escansao_do_corpus():
+    """O vazn publicado de cada metro do corpus devolve a escansão que o corpus
+    já declara, símbolo por símbolo.
+
+    Este é o teste que justifica a ingestão em lote: se o metro reproduz a
+    escansão, escandir verso a verso não acrescenta informação.
+    """
+    from engine.metrica import resolver_vazn
+    casos = [
+        ("فاعلاتن فاعلاتن فاعلن (رمل مسدس محذوف یا وزن مثنوی)", ["masnavi_1", "masnavi_2"]),
+        ("مفتعلن مفاعلن مفتعلن مفاعلن (رجز مثمن مطوی مخبون)", ["divan_2214"]),
+    ]
+    from engine.generative import expandir_escansao
+    for vazn, ids in casos:
+        r = resolver_vazn(vazn)
+        assert r["status"] == "resolvido", (vazn, r)
+        for vid in ids:
+            v = _verso(vid)
+            # a identidade firme é em POSIÇÕES métricas — é o que o metro fixa
+            do_corpus = [p for p, _ in expandir_escansao(v["escansao"])]
+            assert r["posicoes"] == do_corpus, (
+                f"{vid}: vazn dá {''.join(r['posicoes'])}, "
+                f"corpus expande em {''.join(do_corpus)}")
+            # e a duração total tem de coincidir, com superlonga ou sem
+            from engine.generative import durar_por_aruz
+            assert abs(sum(durar_por_aruz(r["escansao"]))
+                       - sum(durar_por_aruz(v["escansao"]))) < 1e-9, vid
+            # no nível de SÍLABA só coincide onde o verso não tem superlonga,
+            # e é esse o limite declarado da ingestão em lote
+            if "=" not in v["escansao"]:
+                assert r["escansao"] == v["escansao"], vid
+            else:
+                assert r["segmentacao_silabica"] == "posicional"
+                assert r["superlongas_conferidas"] is False
+                assert len(r["escansao"]) > len(v["escansao"])
+
+
+def test_metro_derivado_passa_na_conferencia_do_motor():
+    """A entrada de metro montada a partir do vazn confere contra o verso real
+    pelo mesmo conferir_metro() que o resto do motor usa."""
+    from engine.metrica import resolver_vazn, metro_para_corpus, id_do_metro
+    from engine.generative import conferir_metro
+    r = resolver_vazn("مفتعلن مفاعلن مفتعلن مفاعلن (رجز مثمن مطوی مخبون)")
+    mid = id_do_metro(r)
+    metros = {mid: metro_para_corpus(r, "https://ganjoor.net/moulavi/shams/ghazalsh/sh323")}
+    v = dict(_verso("divan_2214")); v["metro"] = mid
+    conf = conferir_metro(v, metros)
+    assert conf["conforme"] is True, conf["divergencias"]
+    assert conf["n_posicoes"] == 16
+
+
+def test_pe_desconhecido_vai_para_quarentena():
+    """Pé fora da tabela não é chutado: o metro não entra no corpus."""
+    from engine.metrica import resolver_vazn
+    r = resolver_vazn("فاعلاتن زززززز فاعلن")
+    assert r["status"] == "quarentena"
+    assert "زززززز" in r["pes_desconhecidos"]
+
+
+def test_escansao_sem_padrao_publicado_vai_para_quarentena():
+    """Uma sequência de pés válidos que não forma metro publicado é barrada.
+
+    É o caso real dos metros raros da amostra (متفاعلن متفاعلن, e o خفیف de 16
+    posições): a tabela publicada não os traz, então ficam de fora em vez de
+    entrarem sem conferência.
+    """
+    from engine.metrica import resolver_vazn
+    r = resolver_vazn("متفاعلن متفاعلن")
+    assert r["status"] == "quarentena", r
+    assert "publicados" in r["motivo"] or "literatura" in r["motivo"] or \
+           "casa" in r["motivo"], r["motivo"]
+    assert r["leituras_testadas"], "a quarentena deve dizer o que foi testado"
+
+
+def test_ambiguidade_do_fe_lan_e_declarada_e_resolvida_pela_fonte():
+    """فعلن tem duas leituras publicadas; a tabela declara as duas e quem
+    desempata é a literatura, não a intuição.
+
+    Mojtass 4.1.15 só fecha com faʿalon (uu–); se alguém apagar a leitura
+    alternativa ou escolher a outra por gosto, este teste cai.
+    """
+    from engine.metrica import carregar_arkan, leituras_do_pe, resolver_vazn
+    arkan = carregar_arkan()
+    leituras = leituras_do_pe(arkan["فعلن"])
+    assert len(leituras) == 2, "as duas leituras de فعلن devem estar declaradas"
+    assert {"".join(l["padrao_posicoes"]) for l in leituras} == {"uu–", "––"}
+    r = resolver_vazn("مفاعلن فعلاتن مفاعلن فعلن (مجتث مثمن مخبون محذوف)")
+    assert r["status"] == "resolvido", r
+    assert "".join(r["posicoes"]) == "u–u–uu––u–u–uu–"
+    assert r["publicados"][0]["codigo_elwell_sutton"].startswith("4.1.15")
+
+
+def test_anceps_do_padrao_publicado_e_respeitado():
+    """'x' na literatura casa com longa e com curta, e só nessa posição."""
+    from engine.metrica import casa_padrao
+    assert casa_padrao(list("uu––uu––uu–"), "xu––uu––uu–")
+    assert casa_padrao(list("–u––uu––uu–"), "xu––uu––uu–")
+    assert not casa_padrao(list("uu––uu––uu–"), "xu––uu––u––")
+    assert not casa_padrao(list("uu––uu––uu"), "xu––uu––uu–")
+
+
+def test_id_do_metro_vem_da_fonte_e_e_estavel():
+    """O identificador do metro é família + código Elwell-Sutton, não apelido
+    nosso — dois poemas do mesmo metro caem no mesmo id."""
+    from engine.metrica import resolver_vazn, id_do_metro
+    a = id_do_metro(resolver_vazn("فاعلاتن فاعلاتن فاعلن"))
+    b = id_do_metro(resolver_vazn("فاعلاتن فاعلاتن فاعلن (رمل مسدس محذوف)"))
+    assert a == b == "ramal_2_4_11", (a, b)
+    assert id_do_metro(resolver_vazn("مفتعلن مفاعلن مفتعلن مفاعلن")) == "rajaz_5_2_16"
+
+
+def test_metro_derivado_nao_inventa_assinatura_afetiva():
+    """A leitura afetiva do metro é do autor. A máquina deixa o campo ausente."""
+    from engine.metrica import resolver_vazn, metro_para_corpus
+    e = metro_para_corpus(resolver_vazn("فاعلاتن فاعلاتن فاعلن"), "http://exemplo")
+    assert "assinatura_afetiva" not in e
+    assert e["_fonte"]["padrao_publicado"]["codigo_elwell_sutton"]
+    assert ("padrao_pe" in e) ^ ("padrao_pes" in e)
+
+
+def test_metrica_nao_toca_a_rede():
+    """engine/ fica offline: a rede vive em ferramentas/colher.py.
+
+    Sem isso, 'função pura' e reprodutibilidade seriam promessa vazia — um
+    import de urllib no motor abriria a porta para o corpus mudar sozinho.
+    """
+    fonte = (RAIZ / "engine/metrica.py").read_text(encoding="utf-8")
+    import re as _re
+    for proibido in ("urllib", "http.client", "socket", "requests"):
+        assert not _re.search(rf"^\s*(import|from)\s+{_re.escape(proibido)}",
+                              fonte, _re.M), f"engine/metrica.py importa {proibido}"
+
+
 if __name__ == "__main__":
     import traceback
     testes = [f for name, f in sorted(globals().items()) if name.startswith("test_")]

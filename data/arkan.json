@@ -1,0 +1,111 @@
+{
+ "_sobre": "Tabela dos pés (arkān) do aruz persa. Cada pé é uma palavra-mnemônica derivada da raiz árabe فعل (fʿl) cuja PRÓPRIA quantidade silábica é o padrão métrico que ela nomeia. Por isso o vazn que o Ganjoor publica para cada poema ('مفتعلن مفاعلن مفتعلن مفاعلن') não é um rótulo opaco: é a escansão escrita em nomes de pés, e parseia por composição. É esta tabela que torna possível ingerir o corpus em lote — o trabalho humano é conferir ~17 pés uma vez, não escandir cada verso.",
+ "_fonte": {
+  "metodo": "A quantidade de cada pé é lida da própria palavra-mnemônica pelas regras de quantidade do aruz persa, que o corpus já declara em _regras_aruz: CV = curta; CVV/CVC = longa; CVVC/CVCC = superlonga (duas posições métricas).",
+  "referencias": [
+   "Persian metres — https://en.wikipedia.org/wiki/Persian_metres (explicita o método: 'using made up words derived from the Arabic verb فعل fʾl', e dá fa'ūlun = u – – )",
+   "Arabic prosody — https://en.wikipedia.org/wiki/Arabic_prosody",
+   "L. P. Elwell-Sutton, The Persian Metres (1976), via a tabela compilada em data/metros_publicados.json"
+  ],
+  "conferencia": "Nenhuma leitura desta tabela é aceita por si. A escansão que ela produz para um vazn só entra no corpus se casar com um padrão de data/metros_publicados.json — fonte dupla e independente. Ver engine/metrica.py:resolver_vazn.",
+  "ressalva": "Compilação terciária. Para uso final, conferir contra Elwell-Sutton (1976) ou Thiesen, A Manual of Classical Persian Prosody (1982)."
+ },
+ "_notacao": {
+  "u": "sílaba curta (1 posição métrica)",
+  "–": "sílaba longa (1 posição métrica)",
+  "=": "sílaba superlonga (2 posições métricas: longa + curta)",
+  "padrao_silabas": "uma entrada por SÍLABA do pé — é nesta forma que a escansão do verso é gravada no corpus, para que sílaba e nota continuem 1:1",
+  "padrao_posicoes": "o mesmo pé expandido em POSIÇÕES métricas (a superlonga vira – u) — é nesta forma que se compara com os padrões publicados e que o motor fatia os pés"
+ },
+ "arkan": [
+  {"nome_persa": "فاعلاتن", "romanizacao": "fāʿelāton",
+   "silabas": ["fā", "ʿe", "lā", "ton"],
+   "padrao_silabas": ["–", "u", "–", "–"], "padrao_posicoes": ["–", "u", "–", "–"],
+   "leitura": "fā CVV longa · ʿe CV curta · lā CVV longa · ton CVC longa"},
+
+  {"nome_persa": "فاعلن", "romanizacao": "fāʿelon",
+   "silabas": ["fā", "ʿe", "lon"],
+   "padrao_silabas": ["–", "u", "–"], "padrao_posicoes": ["–", "u", "–"],
+   "leitura": "fā longa · ʿe curta · lon longa"},
+
+  {"nome_persa": "فاعلات", "romanizacao": "fāʿelāt",
+   "silabas": ["fā", "ʿe", "lāt"],
+   "padrao_silabas": ["–", "u", "="], "padrao_posicoes": ["–", "u", "–", "u"],
+   "leitura": "fā longa · ʿe curta · lāt CVVC superlonga"},
+
+  {"nome_persa": "مفاعیلن", "romanizacao": "mafāʿīlon",
+   "silabas": ["ma", "fā", "ʿī", "lon"],
+   "padrao_silabas": ["u", "–", "–", "–"], "padrao_posicoes": ["u", "–", "–", "–"],
+   "leitura": "ma curta · fā longa · ʿī longa · lon longa"},
+
+  {"nome_persa": "مفاعیل", "romanizacao": "mafāʿīl",
+   "silabas": ["ma", "fā", "ʿīl"],
+   "padrao_silabas": ["u", "–", "="], "padrao_posicoes": ["u", "–", "–", "u"],
+   "leitura": "ma curta · fā longa · ʿīl CVVC superlonga"},
+
+  {"nome_persa": "مفاعلن", "romanizacao": "mafāʿelon",
+   "silabas": ["ma", "fā", "ʿe", "lon"],
+   "padrao_silabas": ["u", "–", "u", "–"], "padrao_posicoes": ["u", "–", "u", "–"],
+   "leitura": "ma curta · fā longa · ʿe curta · lon longa"},
+
+  {"nome_persa": "مفتعلن", "romanizacao": "moftaʿelon",
+   "silabas": ["mof", "ta", "ʿe", "lon"],
+   "padrao_silabas": ["–", "u", "u", "–"], "padrao_posicoes": ["–", "u", "u", "–"],
+   "leitura": "mof CVC longa · ta curta · ʿe curta · lon longa"},
+
+  {"nome_persa": "مستفعلن", "romanizacao": "mostafʿelon",
+   "silabas": ["mos", "taf", "ʿe", "lon"],
+   "padrao_silabas": ["–", "–", "u", "–"], "padrao_posicoes": ["–", "–", "u", "–"],
+   "leitura": "mos longa · taf longa · ʿe curta · lon longa"},
+
+  {"nome_persa": "مفعولن", "romanizacao": "mafʿūlon",
+   "silabas": ["maf", "ʿū", "lon"],
+   "padrao_silabas": ["–", "–", "–"], "padrao_posicoes": ["–", "–", "–"],
+   "leitura": "maf longa · ʿū longa · lon longa"},
+
+  {"nome_persa": "مفعول", "romanizacao": "mafʿūl",
+   "silabas": ["maf", "ʿūl"],
+   "padrao_silabas": ["–", "="], "padrao_posicoes": ["–", "–", "u"],
+   "leitura": "maf CVC longa · ʿūl CVVC superlonga"},
+
+  {"nome_persa": "فعولن", "romanizacao": "faʿūlon",
+   "silabas": ["fa", "ʿū", "lon"],
+   "padrao_silabas": ["u", "–", "–"], "padrao_posicoes": ["u", "–", "–"],
+   "leitura": "fa curta · ʿū longa · lon longa. Confirmado explicitamente na referência: fa'ūlun = u – –"},
+
+  {"nome_persa": "فعلاتن", "romanizacao": "faʿelāton",
+   "silabas": ["fa", "ʿe", "lā", "ton"],
+   "padrao_silabas": ["u", "u", "–", "–"], "padrao_posicoes": ["u", "u", "–", "–"],
+   "leitura": "fa curta · ʿe curta · lā longa · ton longa"},
+
+  {"nome_persa": "فعلات", "romanizacao": "faʿelāt",
+   "silabas": ["fa", "ʿe", "lāt"],
+   "padrao_silabas": ["u", "u", "="], "padrao_posicoes": ["u", "u", "–", "u"],
+   "leitura": "fa curta · ʿe curta · lāt CVVC superlonga"},
+
+  {"nome_persa": "فعلن", "romanizacao": "faʿalon",
+   "silabas": ["fa", "ʿa", "lon"],
+   "padrao_silabas": ["u", "u", "–"], "padrao_posicoes": ["u", "u", "–"],
+   "leitura": "fa curta · ʿa curta · lon longa",
+   "leituras_alternativas": [
+    {"romanizacao": "faʿlon", "silabas": ["faʿ", "lon"],
+     "padrao_silabas": ["–", "–"], "padrao_posicoes": ["–", "–"],
+     "nota": "Sem diacríticos, فعلن admite as duas leituras, e as duas existem como pé final de metros reais (محذوف contra مقصور/اصلم). A escrita do Ganjoor não distingue. A desambiguação não é adivinhada: resolver_vazn testa as duas e só aceita a que casa com um padrão publicado. Na amostra de 70 gazais do Divã de Shams, toda ocorrência resolveu para faʿalon (uu–) — em Mojtass 4.1.15 e Ramal 3.1.15."}
+   ]},
+
+  {"nome_persa": "فعل", "romanizacao": "faʿal",
+   "silabas": ["fa", "ʿal"],
+   "padrao_silabas": ["u", "–"], "padrao_posicoes": ["u", "–"],
+   "leitura": "fa curta · ʿal CVC longa"},
+
+  {"nome_persa": "متفاعلن", "romanizacao": "motafāʿelon",
+   "silabas": ["mo", "ta", "fā", "ʿe", "lon"],
+   "padrao_silabas": ["u", "u", "–", "u", "–"], "padrao_posicoes": ["u", "u", "–", "u", "–"],
+   "leitura": "mo curta · ta curta · fā longa · ʿe curta · lon longa. Pé do kāmel, raro em persa — na amostra caiu em quarentena por não constar da tabela publicada."},
+
+  {"nome_persa": "فع", "romanizacao": "faʿ",
+   "silabas": ["faʿ"],
+   "padrao_silabas": ["–"], "padrao_posicoes": ["–"],
+   "leitura": "faʿ CVC longa"}
+ ]
+}

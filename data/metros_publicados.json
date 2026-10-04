@@ -1,0 +1,307 @@
+{
+ "_sobre": "Padrões métricos do persa clássico publicados, usados como SEGUNDA FONTE: uma escansão derivada do vazn do Ganjoor só entra no corpus se casar com um padrão desta tabela. O que não casar fica em quarentena, não é adivinhado.",
+ "_fonte": {
+  "titulo": "Persian metres",
+  "url": "https://en.wikipedia.org/wiki/Persian_metres",
+  "tabela": "Pattern / Scansion / Arabic / Code / Frequency",
+  "colhido_em": "2026-10-04",
+  "compila": "classificação de L. P. Elwell-Sutton, The Persian Metres (1976); frequências do levantamento citado no artigo",
+  "ressalva": "compilação terciária. Para uso final, conferir contra Elwell-Sutton (1976) ou Thiesen, A Manual of Classical Persian Prosody (1982)."
+ },
+ "_notacao": {
+  "u": "curta",
+  "–": "longa",
+  "x": "anceps (longa ou curta)",
+  "meio_verso": "quando o padrão publicado é um hemistíquio repetido, o padrão é a concatenação e 'meio_verso' guarda a metade"
+ },
+ "padroes": [
+  {
+   "padrao": "u––u––u––u–",
+   "n_posicoes": 11,
+   "meio_verso": null,
+   "familia_arabe": "Motaqāreb",
+   "codigo_elwell_sutton": "1.1.11 (M)",
+   "frequencia_no_corpus_persa": "1.9%",
+   "grupo_elwell_sutton": "1"
+  },
+  {
+   "padrao": "u––u––u––u––",
+   "n_posicoes": 12,
+   "meio_verso": null,
+   "familia_arabe": "Motaqāreb",
+   "codigo_elwell_sutton": "1.1.12",
+   "frequencia_no_corpus_persa": "1.3%",
+   "grupo_elwell_sutton": "1"
+  },
+  {
+   "padrao": "u–––u–––u––",
+   "n_posicoes": 11,
+   "meio_verso": null,
+   "familia_arabe": "Hazaj",
+   "codigo_elwell_sutton": "2.1.11 (M)",
+   "frequencia_no_corpus_persa": "4.6%",
+   "grupo_elwell_sutton": "2"
+  },
+  {
+   "padrao": "u–––u–––u–––u–––",
+   "n_posicoes": 16,
+   "meio_verso": null,
+   "familia_arabe": "Hazaj",
+   "codigo_elwell_sutton": "2.1.16 = 2.1.8(2)",
+   "frequencia_no_corpus_persa": "6.0%",
+   "grupo_elwell_sutton": "2"
+  },
+  {
+   "padrao": "––u–––u–––u–––u–",
+   "n_posicoes": 16,
+   "meio_verso": null,
+   "familia_arabe": "Rajaz",
+   "codigo_elwell_sutton": "2.3.16 = 2.3.8(2)",
+   "frequencia_no_corpus_persa": "1.2%",
+   "grupo_elwell_sutton": "2"
+  },
+  {
+   "padrao": "–u–––u–––u–",
+   "n_posicoes": 11,
+   "meio_verso": null,
+   "familia_arabe": "Ramal",
+   "codigo_elwell_sutton": "2.4.11 (M)",
+   "frequencia_no_corpus_persa": "3.2%",
+   "grupo_elwell_sutton": "2"
+  },
+  {
+   "padrao": "–u–––u–––u–––u–",
+   "n_posicoes": 15,
+   "meio_verso": null,
+   "familia_arabe": "Ramal",
+   "codigo_elwell_sutton": "2.4.15",
+   "frequencia_no_corpus_persa": "12.2%",
+   "grupo_elwell_sutton": "2"
+  },
+  {
+   "padrao": "–u–––u–––u–––u––",
+   "n_posicoes": 16,
+   "meio_verso": null,
+   "familia_arabe": "Ramal",
+   "codigo_elwell_sutton": "2.4.16",
+   "frequencia_no_corpus_persa": "0.2%",
+   "grupo_elwell_sutton": "2"
+  },
+  {
+   "padrao": "xu––uu––uu–",
+   "n_posicoes": 11,
+   "meio_verso": null,
+   "familia_arabe": "Ramal",
+   "codigo_elwell_sutton": "3.1.11 (M)",
+   "frequencia_no_corpus_persa": "1.1%",
+   "grupo_elwell_sutton": "3"
+  },
+  {
+   "padrao": "xu––uu––uu––uu–",
+   "n_posicoes": 15,
+   "meio_verso": null,
+   "familia_arabe": "Ramal",
+   "codigo_elwell_sutton": "3.1.15",
+   "frequencia_no_corpus_persa": "9.7%",
+   "grupo_elwell_sutton": "3"
+  },
+  {
+   "padrao": "xu––uu––uu––uu––",
+   "n_posicoes": 16,
+   "meio_verso": null,
+   "familia_arabe": "Ramal",
+   "codigo_elwell_sutton": "3.1.16",
+   "frequencia_no_corpus_persa": "0.3%",
+   "grupo_elwell_sutton": "3"
+  },
+  {
+   "padrao": "––uu––uu––uu–",
+   "n_posicoes": 13,
+   "meio_verso": null,
+   "familia_arabe": "Hazaj",
+   "codigo_elwell_sutton": "3.3.13 (R)",
+   "frequencia_no_corpus_persa": "–",
+   "grupo_elwell_sutton": "3"
+  },
+  {
+   "padrao": "––uu––uu––uu––",
+   "n_posicoes": 14,
+   "meio_verso": null,
+   "familia_arabe": "Hazaj",
+   "codigo_elwell_sutton": "3.3.14",
+   "frequencia_no_corpus_persa": "5.7%",
+   "grupo_elwell_sutton": "3"
+  },
+  {
+   "padrao": "––uu–––––uu–––",
+   "n_posicoes": 14,
+   "meio_verso": "––uu–––",
+   "familia_arabe": "Hazaj",
+   "codigo_elwell_sutton": "3.3.7(2)",
+   "frequencia_no_corpus_persa": "1.3%",
+   "grupo_elwell_sutton": "3"
+  },
+  {
+   "padrao": "–uu––u––uu––u–",
+   "n_posicoes": 14,
+   "meio_verso": "–uu––u–",
+   "familia_arabe": "Monsareh",
+   "codigo_elwell_sutton": "3.4.7(2) = 4.4.7(2)",
+   "frequencia_no_corpus_persa": "[60]",
+   "grupo_elwell_sutton": "3"
+  },
+  {
+   "padrao": "–uu––uu––u–",
+   "n_posicoes": 11,
+   "meio_verso": null,
+   "familia_arabe": "Sarī'",
+   "codigo_elwell_sutton": "3.4.11 (M)",
+   "frequencia_no_corpus_persa": "1.1%",
+   "grupo_elwell_sutton": "3"
+  },
+  {
+   "padrao": "–uu––uu––uu––uu–",
+   "n_posicoes": 16,
+   "meio_verso": null,
+   "familia_arabe": "Sarī'",
+   "codigo_elwell_sutton": "3.4.16",
+   "frequencia_no_corpus_persa": "0.1%",
+   "grupo_elwell_sutton": "3"
+  },
+  {
+   "padrao": "u–u–uu––u–u–uu–",
+   "n_posicoes": 15,
+   "meio_verso": null,
+   "familia_arabe": "Mojtass",
+   "codigo_elwell_sutton": "4.1.15",
+   "frequencia_no_corpus_persa": "12.9%",
+   "grupo_elwell_sutton": "4"
+  },
+  {
+   "padrao": "u–u–uu––u–u–uu––",
+   "n_posicoes": 16,
+   "meio_verso": null,
+   "familia_arabe": "Mojtass",
+   "codigo_elwell_sutton": "4.1.16",
+   "frequencia_no_corpus_persa": "0.7%",
+   "grupo_elwell_sutton": "4"
+  },
+  {
+   "padrao": "–uu––u–u–uu––",
+   "n_posicoes": 13,
+   "meio_verso": null,
+   "familia_arabe": "Monsareh",
+   "codigo_elwell_sutton": "4.4.13",
+   "frequencia_no_corpus_persa": "1.0%",
+   "grupo_elwell_sutton": "4"
+  },
+  {
+   "padrao": "–uu––u–u–uu––u–",
+   "n_posicoes": 15,
+   "meio_verso": null,
+   "familia_arabe": "Monsareh",
+   "codigo_elwell_sutton": "4.4.15",
+   "frequencia_no_corpus_persa": "1.2%",
+   "grupo_elwell_sutton": "4"
+  },
+  {
+   "padrao": "–uu––u––uu––u–",
+   "n_posicoes": 14,
+   "meio_verso": "–uu––u–",
+   "familia_arabe": "Monsareh",
+   "codigo_elwell_sutton": "4.4.7(2) =3.4.7(2)",
+   "frequencia_no_corpus_persa": "[60]",
+   "grupo_elwell_sutton": "4"
+  },
+  {
+   "padrao": "xu––u–u–uu–",
+   "n_posicoes": 11,
+   "meio_verso": null,
+   "familia_arabe": "Xafīf",
+   "codigo_elwell_sutton": "4.5.11 (M)",
+   "frequencia_no_corpus_persa": "8.9%",
+   "grupo_elwell_sutton": "4"
+  },
+  {
+   "padrao": "––u–u–uu–––",
+   "n_posicoes": 11,
+   "meio_verso": null,
+   "familia_arabe": "Mozāre'",
+   "codigo_elwell_sutton": "4.7.11",
+   "frequencia_no_corpus_persa": "0.3%",
+   "grupo_elwell_sutton": "4"
+  },
+  {
+   "padrao": "––u–u–uu––u–u–",
+   "n_posicoes": 14,
+   "meio_verso": null,
+   "familia_arabe": "Mozāre'",
+   "codigo_elwell_sutton": "4.7.14",
+   "frequencia_no_corpus_persa": "13.2%",
+   "grupo_elwell_sutton": "4"
+  },
+  {
+   "padrao": "––u–u–uu––u–u––",
+   "n_posicoes": 15,
+   "meio_verso": null,
+   "familia_arabe": "Mozāre'",
+   "codigo_elwell_sutton": "4.7.15",
+   "frequencia_no_corpus_persa": "2.0%",
+   "grupo_elwell_sutton": "4"
+  },
+  {
+   "padrao": "––u–u––––u–u––",
+   "n_posicoes": 14,
+   "meio_verso": "––u–u––",
+   "familia_arabe": "Mozāre'",
+   "codigo_elwell_sutton": "4.7.7(2)",
+   "frequencia_no_corpus_persa": "[61]",
+   "grupo_elwell_sutton": "4"
+  },
+  {
+   "padrao": "––uu–u–u––",
+   "n_posicoes": 10,
+   "meio_verso": null,
+   "familia_arabe": "Hazaj",
+   "codigo_elwell_sutton": "5.1.10 (M)",
+   "frequencia_no_corpus_persa": "3.2%",
+   "grupo_elwell_sutton": "5"
+  },
+  {
+   "padrao": "––uu–u–u–––",
+   "n_posicoes": 11,
+   "meio_verso": null,
+   "familia_arabe": "Hazaj",
+   "codigo_elwell_sutton": "5.1.11",
+   "frequencia_no_corpus_persa": "0.7%",
+   "grupo_elwell_sutton": "5"
+  },
+  {
+   "padrao": "––uu–u–u––uu–",
+   "n_posicoes": 13,
+   "meio_verso": null,
+   "familia_arabe": "Hazaj",
+   "codigo_elwell_sutton": "5.1.13 (R)",
+   "frequencia_no_corpus_persa": "–",
+   "grupo_elwell_sutton": "5"
+  },
+  {
+   "padrao": "–uu–u–u––uu–u–u–",
+   "n_posicoes": 16,
+   "meio_verso": null,
+   "familia_arabe": "Rajaz",
+   "codigo_elwell_sutton": "5.2.16",
+   "frequencia_no_corpus_persa": "0.8%",
+   "grupo_elwell_sutton": "5"
+  },
+  {
+   "padrao": "uu–u–u––uu–u–u––",
+   "n_posicoes": 16,
+   "meio_verso": null,
+   "familia_arabe": "Ramal",
+   "codigo_elwell_sutton": "5.3.16",
+   "frequencia_no_corpus_persa": "0.6%",
+   "grupo_elwell_sutton": "5"
+  }
+ ]
+}
