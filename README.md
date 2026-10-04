@@ -34,12 +34,27 @@ python3 engine/pipeline.py --verso masnavi_1 --n 300 --lote 8
 python3 engine/pipeline.py --verso masnavi_1 --julgar 40
 python3 engine/pipeline.py --explicar-gosto
 ```
+Ampliar o corpus a partir do metro publicado (a única parte que usa rede):
+
+```bash
+# por faixa de poemas
+python3 ferramentas/colher.py --faixa /moulavi/shams/ghazalsh/sh 1 150
+
+# por metro: o índice /simi/ do Ganjoor lista todos os poemas de um vazn
+python3 ferramentas/colher.py --metro 'فاعلاتن فاعلاتن فاعلن' --paginas 3
+
+# conferir um vazn sem colher nada
+python3 engine/metrica.py 'مفتعلن مفاعلن مفتعلن مفاعلن'
+```
+
 
 ## Estrutura
 
 | Caminho | O quê |
 |---|---|
-| `data/aruz_corpus.json` | Versos de Rumi escaneados (a fonte do ritmo) |
+| `data/aruz_corpus.json` | Versos de Rumi escandidos à mão (a fonte do ritmo) |
+| `data/arkan.json` | Os pés do aruz — a tabela que faz o vazn publicado parsear por composição |
+| `data/metros_publicados.json` | Padrões de Elwell-Sutton, a segunda fonte que confere a escansão derivada |
 | `engine/generative.py` | Motor generativo + relatório de auditoria |
 | `engine/ritmo.py` | Operações rítmicas auditáveis (inversão, aumentação, síncope, hoquetus) |
 | `engine/export.py` | Exportação MusicXML e MIDI, só com a stdlib |
@@ -47,12 +62,15 @@ python3 engine/pipeline.py --explicar-gosto
 | `engine/filtros.py` | A peneira — e o registro das heurísticas que a medição derrubou |
 | `engine/selecao.py` | Partida a frio por medoides; hipóteses sempre rotuladas |
 | `engine/gosto.py` | Ranqueador aprendido do julgamento do autor, com pesos legíveis |
+| `engine/metrica.py` | O vazn publicado vira escansão, com portão de fonte dupla |
 | `engine/pipeline.py` | Os dez estágios encadeados, do verso à partitura |
+| `ferramentas/colher.py` | Colhe corpus do Ganjoor em lote (a única parte com rede) |
 | `app/server.py` · `app/index.html` | Servidor local e interface de co-produção |
 | `tests/` | Garantia de auditabilidade (54 testes) |
 | `handout/HANDOUT.md` | Handout completo do projeto |
 | `docs/PROCESSO_INTERFACE.md` | Desenho do processo da interface |
 | `docs/PIPELINE.md` | O pipeline, o funil e as quatro heurísticas derrubadas |
+| `docs/CORPUS.md` | Ampliar o corpus: o vazn publicado, a fonte dupla, e o que o lote não pode afirmar |
 | `docs/PROPOSTA_divan_2214.md` | A correção filológica do verso do Divã (aplicada) |
 
 ## Como escolher entre milhões de melodias

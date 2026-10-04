@@ -100,9 +100,10 @@ def normalizar_pe(token: str) -> str:
     """Tira tatweel, juntadores e diacríticos da grafia de um nome de pé."""
     t = unicodedata.normalize("NFC", token)
     t = "".join(c for c in t if c not in _LIXO)
-    # marcas de vocalização (fatha, damma, sukun…) não distinguem o pé na
-    # grafia do Ganjoor, que as omite
-    t = "".join(c for c in t if unicodedata.category(c) != "Mn")
+    # As marcas de vocalização FICAM. Apagá-las parecia inofensivo porque a
+    # amostra de gazais não as usava, mas o inventário completo do Ganjoor tem
+    # فاعلُ (fāʿelo, – u u) ao lado de فاعل: a damma é o que distingue os dois
+    # pés, e apagá-la confundiria um com o outro silenciosamente.
     return t.strip()
 
 

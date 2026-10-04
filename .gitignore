@@ -6,3 +6,4 @@ engine/saida/
 *.pdf
 .DS_Store
 .venv/
+.cache_ganjoor/

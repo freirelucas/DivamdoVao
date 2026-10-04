@@ -1400,6 +1400,137 @@ def test_pipeline_inteiro_roda_em_verso_de_lote():
         assert {"lote.musicxml", "lote.mid", "lote_auditoria.json"} <= nomes
 
 
+# ---------------------------------------------------------------------------
+# COLHEDOR (ferramentas/colher.py) — ingestão em lote
+#
+# Nenhum destes testes toca a rede: o cache em disco do próprio colhedor serve
+# de fixture. Se um deles começar a precisar de rede, é porque a separação
+# entre colher e processar se rompeu.
+# ---------------------------------------------------------------------------
+
+_PAGINA_FIXTURE = """<html><head><title>غزل شمارهٔ ۹۹ - teste</title></head><body>
+<table><tr><td>وزن:</td>
+  <td><a href="/simi/?v=x&amp;a=5">فاعلاتن فاعلاتن فاعلن (رمل مسدس محذوف)</a></td></tr></table>
+<div class="b" id="bn1"><div class="m1"><p>هَمْ&zwnj;چو نی زهری و تریاقی که دید</p></div>
+<div class="m2"><p>هم چو نی دمساز و مشتاقی که دید</p></div></div>
+<div class="b" id="bn2"><div class="m1"><p>نی حدیث راه پر خون می&zwnj;کند</p></div>
+<div class="m2"><p>قصه&zwnj;های عشق مجنون می&zwnj;کند</p></div></div>
+</body></html>"""
+
+
+def _semear_cache(tmp, url, pagina):
+    """Escreve uma página no cache do colhedor, para que pegar() não use rede."""
+    from ferramentas.colher import _nome_de_cache
+    d = Path(tmp); d.mkdir(parents=True, exist_ok=True)
+    (d / _nome_de_cache(url)).write_text(pagina, encoding="utf-8")
+
+
+def test_colhedor_extrai_vazn_e_os_dois_hemistiquios():
+    """Perder o segundo hemistíquio corta o corpus pela metade — e foi o que o
+    primeiro extrator fazia, por tentar casar div aninhado com regex."""
+    from ferramentas.colher import extrair_vazn, extrair_coplas
+    assert "فاعلاتن" in extrair_vazn(_PAGINA_FIXTURE)
+    coplas = extrair_coplas(_PAGINA_FIXTURE)
+    assert len(coplas) == 2, coplas
+    assert [c["n"] for c in coplas] == ["bn1", "bn2"]
+    for c in coplas:
+        assert len(c["hemistiquios"]) == 2, c
+        assert all(h.strip() for h in c["hemistiquios"])
+    assert "زهری" in coplas[0]["hemistiquios"][0]
+    assert "دمساز" in coplas[0]["hemistiquios"][1]
+
+
+def test_colhedor_nao_inventa_transliteracao_nem_glosa():
+    """O colhedor entrega o que a fonte dá, e declara o que falta.
+
+    translit_silabas, glosa_pt e imagem são trabalho humano. Preenchê-los com
+    plausibilidade é o erro nº 3 do registro em engine/filtros.py.
+    """
+    from ferramentas.colher import extrair_poema, versos_do_poema
+    from engine.metrica import resolver_vazn, id_do_metro
+    poema = extrair_poema(_PAGINA_FIXTURE, "https://ganjoor.net/x/sh99")
+    r = resolver_vazn(poema["vazn"])
+    versos = versos_do_poema(poema, r, id_do_metro(r))
+    assert len(versos) == 4, "duas coplas de dois hemistíquios"
+    for v in versos:
+        assert "translit_silabas" not in v
+        assert "glosa_pt" not in v and "imagem" not in v
+        assert v["persa"] and v["escansao"] == r["escansao"]
+        assert v["_origem"]["url"].endswith("/sh99")
+        assert v["_origem"]["vazn_registrado"] == r["vazn"]
+        assert any("translit_silabas" in x for x in v["_pendencias_humanas"])
+        assert any("superlonga" in x for x in v["_pendencias_humanas"])
+    assert len({v["id"] for v in versos}) == 4, "ids têm de ser distintos"
+
+
+def test_colhedor_registra_a_variante_de_edicao():
+    """O texto do Ganjoor não é o de toda edição. Fingir que é apagaria uma
+    divergência real — a abertura do Masnavi difere entre o Ganjoor e Nicholson,
+    que é a edição que o corpus feito à mão segue."""
+    from ferramentas.colher import extrair_poema, versos_do_poema
+    from engine.metrica import resolver_vazn, id_do_metro
+    poema = extrair_poema(_PAGINA_FIXTURE, "https://ganjoor.net/x/sh99")
+    r = resolver_vazn(poema["vazn"])
+    v = versos_do_poema(poema, r, id_do_metro(r))[0]
+    assert "Nicholson" in v["_origem"]["edicao"]
+
+
+def test_colhedor_poe_em_quarentena_e_nao_adivinha():
+    """Sem vazn, sem texto, ou com metro não conferível: fora do corpus, com o
+    motivo nomeado. A quarentena é o mapa do que falta."""
+    from ferramentas.colher import colher
+    with tempfile.TemporaryDirectory() as tmp:
+        bom = "https://ganjoor.net/t/sh1"
+        sem_vazn = "https://ganjoor.net/t/sh2"
+        raro = "https://ganjoor.net/t/sh3"
+        _semear_cache(tmp, bom, _PAGINA_FIXTURE)
+        _semear_cache(tmp, sem_vazn, _PAGINA_FIXTURE.replace("وزن:", "قافیه:"))
+        _semear_cache(tmp, raro, _PAGINA_FIXTURE.replace(
+            "فاعلاتن فاعلاتن فاعلن (رمل مسدس محذوف)", "متفاعلن متفاعلن"))
+        c = colher([bom, sem_vazn, raro], cache=Path(tmp), espera=0)
+    r = c["relatorio"]
+    assert r["poemas_pedidos"] == 3 and r["poemas_ingeridos"] == 1
+    assert r["versos_ingeridos"] == 4 and r["metros_distintos"] == 1
+    estados = {q["url"].rsplit("/", 1)[1]: q["status"] for q in c["quarentena"]}
+    assert estados == {"sh2": "sem_vazn", "sh3": "quarentena"}, estados
+    assert all(q.get("motivo") for q in c["quarentena"]), "quarentena sem motivo"
+
+
+def test_colheita_gravada_roda_no_motor_e_confere_o_metro():
+    """O arquivo que a colheita grava é corpus de verdade: o motor o lê e cada
+    verso confere contra o metro declarado."""
+    from ferramentas.colher import colher, gravar
+    from engine.generative import conferir_metro, gerar_melodia
+    with tempfile.TemporaryDirectory() as tmp:
+        url = "https://ganjoor.net/t/sh1"
+        _semear_cache(tmp + "/cache", url, _PAGINA_FIXTURE)
+        c = colher([url], cache=Path(tmp) / "cache", espera=0)
+        arqs = gravar(c, Path(tmp) / "saida")
+        assert [a.name for a in arqs] == ["corpus_colhido.json",
+                                          "corpus_colhido_quarentena.json"]
+        corpus = json.loads(arqs[0].read_text(encoding="utf-8"))
+    assert corpus["_relatorio_da_colheita"]["versos_ingeridos"] == 4
+    for v in corpus["versos"]:
+        conf = conferir_metro(v, corpus["metros"])
+        assert conf["conforme"] is True, (v["id"], conf["divergencias"])
+        frase = gerar_melodia(v, metros=corpus["metros"])
+        assert len(frase.notas) == len(v["escansao"])
+    for m in corpus["metros"].values():
+        assert m["_fonte"]["padrao_publicado"]["codigo_elwell_sutton"]
+        assert "assinatura_afetiva" not in m
+
+
+def test_engine_inteiro_fica_offline():
+    """A rede vive só em ferramentas/. Se um módulo de engine/ importar rede, a
+    reprodutibilidade do corpus deixa de ser verificável."""
+    import re as _re
+    for mod in sorted((RAIZ / "engine").glob("*.py")):
+        fonte = mod.read_text(encoding="utf-8")
+        for proibido in ("urllib", "http.client", "socket", "requests", "ftplib"):
+            assert not _re.search(rf"^\s*(import|from)\s+{_re.escape(proibido)}",
+                                  fonte, _re.M), f"{mod.name} importa {proibido}"
+
+
 if __name__ == "__main__":
     import traceback
     testes = [f for name, f in sorted(globals().items()) if name.startswith("test_")]
