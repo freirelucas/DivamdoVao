@@ -1,0 +1,26 @@
+Histórico de licenciamento do Divã do Vão
+=========================================
+
+Este projeto foi publicado sob a licença MIT até o commit 91b2a8f
+("Ampliar a suíte para 31 testes, e acrescentar CI e procedência dos
+exemplos"), inclusive. A partir do commit seguinte, passa a ser licenciado
+sob a GNU General Public License v3.0 (ver LICENSE).
+
+Motivo: a integração com a biblioteca musicntwrk (Marco Buongiorno Nardelli,
+https://github.com/marcobn/musicntwrk), que é distribuída sob GPL-3.0 e cuja
+licença se estende à obra combinada.
+
+Quem obteve qualquer versão anterior a essa mudança continua com os direitos
+que a licença MIT concedeu naquela versão — uma licença já concedida não é
+revogável retroativamente. O histórico do git preserva essas versões, e o
+texto MIT original está em LICENSE.MIT.
+
+O relicenciamento foi feito pelo titular único do direito autoral sobre o
+código do projeto. Ele não alcança:
+
+  - o texto persa de Rumi, que está em domínio público;
+  - a escansão métrica, que é fato linguístico e não é protegível;
+  - o conteúdo autoral textual e musical (letra em português, melodia,
+    harmonia, arranjo), cuja licença é escolha separada — ver README.
+
+Isto não é parecer jurídico.

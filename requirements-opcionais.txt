@@ -1,0 +1,30 @@
+# Opcionais. NÃO são necessários para o motor, o app, as operações rítmicas, a
+# medida de complexidade nem para exportar MusicXML/MIDI — tudo isso roda só com
+# a stdlib, que é o princípio do projeto (ver engine/export.py e
+# engine/complexidade.py).
+#
+# Instale só o que for usar:  pip install music21   (etc.)
+
+# --- checagem cruzada de partitura e métricas (leves) -----------------------
+# music21 (BSD): grava PDF via LilyPond, e serve de segunda leitura da partitura
+#   e do MIDI que engine/export.py escreve.
+music21>=9.1
+# muspy (MIT): lê o MusicXML/MIDI exportado e traz métricas objetivas de MIR
+#   para conferir as nossas (pitch_entropy, scale_consistency, groove...).
+muspy>=0.5
+
+# --- redes musicais (PESADO) ------------------------------------------------
+# musicntwrk (GPL-3.0): redes em espaços musicais generalizados, de Marco
+#   Buongiorno Nardelli — é dela que vem a licença GPL-3.0 do projeto.
+#
+#   ATENÇÃO AO PESO: puxa tensorflow, librosa, numba, pyo, vpython, PySimpleGUI,
+#   matplotlib, plotly e pydub, alguns com dependências de sistema (portaudio
+#   para o pyo, ffmpeg para o pydub). São gigabytes. Por isso ela fica aqui e
+#   não no núcleo: o básico tem de rodar em máquina modesta sem instalar nada.
+#   Útil quando o corpus crescer o bastante para uma rede rítmica valer a pena.
+# musicntwrk>=2.3
+
+# --- ferramentas de sistema (instalar via apt/brew, não pip) ----------------
+#   lilypond      -> gravação de partitura em PDF
+#   fluidsynth    -> síntese de áudio a partir de MIDI
+#   ffmpeg        -> conversão de áudio (WAV -> MP3)

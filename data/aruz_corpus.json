@@ -1,0 +1,71 @@
+{
+  "_sobre": "Corpus rítmico auditável. Cada verso traz a transliteração silábica e a escansão do aruz persa (– longa, u curta, = superlonga). A escansão é a FONTE do ritmo musical: nenhum valor rítmico é inventado — todos derivam daqui. Fontes de escansão: Wikipedia 'Persian metres', persianlanguageonline.com (aruz parte 1), Grokipedia 'Aruz'/'Persian metres'.",
+  "_notacao": {"–": "longa", "u": "curta", "=": "superlonga (= longa+curta)"},
+  "_metro_conferido": "Por verso: true = a escansão foi conferida e se decompõe nos pés do metro declarado (ver conferir_metro() em engine/generative.py); false = há divergência conhecida, ainda não resolvida em edição crítica. Os testes exigem que todo verso não conforme esteja marcado como false — a divergência fica visível em vez de silenciosa.",
+  "_regras_aruz": [
+    "A sílaba final de um hemistíquio conta sempre como longa.",
+    "Sílaba superlonga equivale metricamente a longa seguida de curta.",
+    "Vogais curtas não são escritas no persa; a escansão resolve a leitura."
+  ],
+  "metros": {
+    "ramal_mahzuf": {
+      "pe": "fāʿilātun fāʿilātun fāʿilātun (fāʿilun)",
+      "padrao_pe": ["–","u","–","–"],
+      "descricao": "Metro do Masnavi. Ritmo corrente, veloz — 'propaga a alma ao êxtase' (uso místico).",
+      "assinatura_afetiva": "movimento espiritual, giro, corrente"
+    },
+    "hazaj": {
+      "pe": "mafāʿīlun mafāʿīlun",
+      "padrao_pe": ["u","–","–","–"],
+      "descricao": "Metro lírico comum em ghazais de amor.",
+      "assinatura_afetiva": "ondulação, anseio, embalo"
+    },
+    "rajaz_mosamman_matvi_makhbun": {
+      "pe": "moftaʿelon mafāʿelon moftaʿelon mafāʿelon",
+      "padrao_pes": [["–","u","u","–"], ["u","–","u","–"]],
+      "descricao": "Rajaz de oito pés, com os pés alternando entre a forma matvi (moftaʿelon) e a makhbun (mafāʿelon). Metro de pés ALTERNADOS: por isso 'padrao_pes' (lista) em vez de 'padrao_pe' (pé único repetido) — um único pé repetido não descreve o verso.",
+      "assinatura_afetiva": "pulso trocado, passo que hesita e retoma",
+      "_fonte": "Vazn registrado pelo Ganjoor para o gazal 323 do Divã de Shams: مفتعلن مفاعلن مفتعلن مفاعلن (رجز مثمن مطوی مخبون). https://ganjoor.net/moulavi/shams/ghazalsh/sh323"
+    }
+  },
+  "versos": [
+    {
+      "id": "masnavi_1",
+      "obra": "Masnavi, Livro I, dístico 1",
+      "metro": "ramal_mahzuf",
+      "persa": "بشنو از نی چون حکایت می‌کند",
+      "translit_silabas": ["beš","naw","az","nay","čun","he","kā","yat","mī","ko","nad"],
+      "escansao": ["–","u","–","–","–","u","–","–","–","u","–"],
+      "glosa_pt": "Escuta o junco, como conta a sua história",
+      "imagem": "a flauta de junco (ney) que chora a separação",
+      "dominio_publico": true,
+      "metro_conferido": true
+    },
+    {
+      "id": "masnavi_2",
+      "obra": "Masnavi, Livro I, dístico 1 (2º hemistíquio)",
+      "metro": "ramal_mahzuf",
+      "persa": "از جدایی‌ها شکایت می‌کند",
+      "translit_silabas": ["az","jo","dā","yī","hā","ši","kā","yat","mī","ko","nad"],
+      "escansao": ["–","u","–","–","–","u","–","–","–","u","–"],
+      "glosa_pt": "das separações, ela se queixa",
+      "imagem": "a queixa da separação",
+      "dominio_publico": true,
+      "metro_conferido": true
+    },
+    {
+      "id": "divan_2214",
+      "obra": "Divã de Shams, gazal 323 (abertura)",
+      "metro": "rajaz_mosamman_matvi_makhbun",
+      "persa": "آن نفسی که با خودی یار چو خار آیدت",
+      "translit_silabas": ["ān","na","fa","sī","ke","bā","xo","dī","yār","čo","xār","ā","ya","dat"],
+      "escansao": ["–","u","u","–","u","–","u","–","=","u","=","–","u","–"],
+      "glosa_pt": "Aquele instante em que, contigo, o amado é como espinho",
+      "imagem": "dois numa só alma — o instante do encontro",
+      "dominio_publico": true,
+      "metro_conferido": true,
+      "_escansao_conferida": "Escansão conferida contra o vazn que a fonte registra para o gazal 323 do Divã de Shams: مفتعلن مفاعلن مفتعلن مفاعلن (رجز مثمن مطوی مخبون). Expandindo as superlongas nas suas duas posições métricas, casa 16/16 posições e 4/4 pés — ver docs/PROPOSTA_divan_2214.md e conferir_metro(). 'yār' e 'xār' são CVVC, portanto superlongas: são as primeiras do corpus a exercer o símbolo '='. Fonte: https://ganjoor.net/moulavi/shams/ghazalsh/sh323",
+      "_ressalva": "A numeração do Ganjoor é amplamente usada, mas a referência canônica é a edição Foruzanfar, não consultada diretamente. A escansão não depende dessa conferência (deriva do vazn e das regras de quantidade silábica); o número do gazal e a atribuição dependem."
+    }
+  ]
+}

@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Divã do Vão — co-produção</title>
+<style>
+  :root{--bg:#12100c;--card:#1c1913;--ink:#efe8da;--dim:#b0a390;--gold:#d0a94b;--rust:#c06a3c;--line:#332d22;--longa:#d0a94b;--curta:#5c9ea0;--ok:#7aa85c;--erro:#c9553d}
+  *{box-sizing:border-box} html{-webkit-text-size-adjust:100%}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:Georgia,serif;font-size:17px;line-height:1.5}
+  .wrap{max-width:820px;margin:0 auto;padding:20px 16px 90px}
+  h1{color:var(--gold);font-size:1.7rem;margin:.1em 0}
+  .tag{color:var(--rust);font-style:italic;margin:.2em 0 1.2em}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin:14px 0}
+  label{display:block;color:var(--dim);font-size:.8rem;text-transform:uppercase;letter-spacing:.5px;margin:.6em 0 .2em}
+  select,input[type=range],button,textarea{font-family:inherit;font-size:1rem}
+  select,textarea{width:100%;background:#0e0c08;color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:10px;min-height:44px}
+  textarea{min-height:70px}
+  button{background:var(--rust);color:#fff;border:none;border-radius:8px;padding:12px 16px;min-height:46px;cursor:pointer}
+  button:hover{background:var(--gold);color:#000}
+  .persa{font-size:1.8rem;direction:rtl;text-align:right;color:var(--gold);margin:.3em 0;line-height:1.8}
+  .scan{display:flex;flex-wrap:wrap;gap:4px;margin:.5em 0}
+  .syl{border:1px solid var(--line);border-radius:8px;padding:4px 8px;text-align:center;min-width:44px}
+  .syl .s{font-size:.9rem} .syl .m{font-size:1.1rem;font-weight:bold}
+  .syl.longa{border-color:var(--longa)} .syl.longa .m{color:var(--longa)}
+  .syl.curta{border-color:var(--curta)} .syl.curta .m{color:var(--curta)}
+  .syl .d{font-size:.68rem;color:var(--dim)}
+  .syl .pt{font-size:.85rem;margin-top:3px;padding-top:3px;border-top:1px dashed var(--line);min-height:1.3em}
+  .syl.casada .pt{color:var(--ok)} .syl.vazia .pt{color:var(--line)}
+  .syl.sobra{border-color:var(--erro)} .syl.sobra .pt,.syl.sobra .s{color:var(--erro)}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .row>*{flex:1 1 auto}
+  .glosa{color:var(--dim);font-style:italic}
+  .audit{font-family:'Courier New',monospace;font-size:.78rem;white-space:pre-wrap;color:var(--dim);
+    background:#0e0c08;border:1px solid var(--line);border-radius:8px;padding:10px;max-height:260px;overflow:auto}
+  .leg{display:flex;gap:14px;font-size:.8rem;color:var(--dim);margin:.4em 0;flex-wrap:wrap}
+  .leg b{color:var(--longa)} .leg i{color:var(--curta);font-style:normal}
+  details summary{cursor:pointer;color:var(--gold);padding:8px 0}
+  .hint{color:var(--dim);font-size:.78rem;margin-top:6px}
+  .selo{display:inline-block;font-size:.72rem;text-transform:uppercase;letter-spacing:.5px;
+    border-radius:6px;padding:3px 8px;margin:.3em 0}
+  .selo.ok{color:var(--ok);border:1px solid var(--ok)}
+  .selo.aviso{color:var(--erro);border:1px solid var(--erro)}
+  .semaforo{font-size:.9rem;margin:.5em 0 .2em}
+  .semaforo.ok{color:var(--ok)} .semaforo.erro{color:var(--erro)}
+  .divs{font-size:.76rem;color:var(--erro);margin:.2em 0 0;padding-left:1.1em}
+  .barra{display:flex;height:26px;border-radius:6px;overflow:hidden;border:1px solid var(--line);margin:.5em 0 .2em}
+  .barra .rumi{background:var(--gold);color:#000}
+  .barra .acaso{background:#2a2414;color:var(--dim)}
+  .barra span{display:flex;align-items:center;justify-content:center;font-size:.75rem;white-space:nowrap;overflow:hidden}
+  .medidas{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin:.6em 0}
+  .medida{background:#0e0c08;border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+  .medida .v{font-size:1.25rem;color:var(--gold)}
+  .medida .r{font-size:.7rem;color:var(--dim);text-transform:uppercase;letter-spacing:.4px}
+  .medida .o{font-size:.68rem;color:var(--curta)}
+  .compassos{display:flex;gap:6px;flex-wrap:wrap;margin:.4em 0}
+  .comp{border:1px solid var(--line);border-radius:6px;padding:4px 9px;font-size:.8rem;color:var(--dim)}
+  .comp.melhor{border-color:var(--gold);color:var(--gold)}
+  .ab{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:.6em 0}
+  .lado{background:#0e0c08;border:1px solid var(--line);border-radius:8px;padding:10px}
+  .lado h4{margin:.1em 0 .5em;color:var(--gold);font-size:.95rem}
+  .lado .notas{font-family:'Courier New',monospace;font-size:.72rem;color:var(--dim);word-break:break-all}
+  .lado button{width:100%;margin-top:8px}
+  .hip{font-size:.72rem;color:var(--curta);margin-top:6px;border-top:1px dashed var(--line);padding-top:5px}
+  .hip b{color:var(--dim);font-weight:normal}
+  .aviso{color:var(--erro);font-size:.8rem;margin:.4em 0}
+  .pesos{font-family:'Courier New',monospace;font-size:.75rem;color:var(--dim);
+    background:#0e0c08;border:1px solid var(--line);border-radius:8px;padding:9px;margin:.4em 0}
+  @media(max-width:520px){.ab{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Divã do Vão</h1>
+  <p class="tag">Co-produção: da rítmica de Rumi (aruz persa) à canção Clube da Esquina</p>
+
+  <div class="card">
+    <label>Verso de Rumi (domínio público)</label>
+    <select id="verso"></select>
+    <div class="persa" id="persa"></div>
+    <div id="selo"></div>
+    <ul class="divs" id="divs"></ul>
+    <div class="leg">Escansão do aruz: <b>— longa</b> · <i>u curta</i> · a duração da nota vem daqui</div>
+    <div class="scan" id="scan"></div>
+    <p class="glosa" id="glosa"></p>
+  </div>
+
+  <div class="card">
+    <div class="row">
+      <div>
+        <label>Modo (cor Clube da Esquina)</label>
+        <select id="modo">
+          <option value="dorico">Dórico (menor com 6ª maior — mineiro)</option>
+          <option value="eolio">Eólio (menor natural)</option>
+          <option value="lidio">Lídio (4ª aumentada — brilho)</option>
+          <option value="mixolidio">Mixolídio (dominante suave)</option>
+        </select>
+      </div>
+      <div>
+        <label>Operação rítmica (HANDOUT §3)</label>
+        <select id="operacao">
+          <option value="">Derivação direta (1:1 do aruz)</option>
+          <option value="inversao">Inversão métrica (espelho)</option>
+          <option value="aumentacao">Aumentação ×2 (clímax lento)</option>
+          <option value="diminuicao">Diminuição ÷2 (transe)</option>
+          <option value="deslocamento">Deslocamento (síncope)</option>
+        </select>
+      </div>
+    </div>
+    <div class="row" style="margin-top:12px">
+      <div>
+        <label>Entropia melódica: <span id="entv">0.4</span></label>
+        <input type="range" id="ent" min="0" max="1" step="0.05" value="0.4">
+      </div>
+      <div>
+        <label>Âmbito (semitons): <span id="ambv">9</span></label>
+        <input type="range" id="amb" min="3" max="24" step="1" value="9">
+      </div>
+    </div>
+    <div class="row" style="margin-top:12px">
+      <button id="gerar">Gerar melodia do aruz</button>
+      <button id="tocar" style="background:#2a2414;color:var(--gold);border:1px solid var(--line)">▶ Tocar</button>
+    </div>
+    <p class="hint">O ritmo é derivado das sílabas longas/curtas do persa. As alturas seguem o modo escolhido. Semente fixa: reprodutível.</p>
+  </div>
+
+  <div class="card">
+    <label>Tradução / letra em português (co-produção)</label>
+    <textarea id="letra" placeholder="Separe as sílabas com hífen: Es-cu-ta o jun-co, co-mo con-ta"></textarea>
+    <div class="semaforo" id="semaforo">Gere uma melodia e escreva a letra para validar sílaba↔nota.</div>
+    <p class="hint" id="dicaElisao"></p>
+    <p class="hint">Cada sílaba do português ocupa uma nota. As caixas acima mostram, sob cada sílaba persa, a sílaba que você escreveu — verde quando casa, vermelho quando sobra.</p>
+  </div>
+
+  <div class="card">
+    <details>
+      <summary>Julgar candidatas — ensinar o gosto</summary>
+      <p class="hint">O motor gera milhões de melodias e não existe regra que
+        substitua o seu ouvido. Compare duas e escolha: em ~40 comparações o
+        ranqueador aprende a ordenar por você, e daí em diante as curvas
+        estacionam — não adianta julgar mais.</p>
+      <div class="row">
+        <button id="novoLote">Buscar candidatas</button>
+        <button id="verGosto" style="background:#2a2414;color:var(--gold);border:1px solid var(--line)">O que ele aprendeu</button>
+      </div>
+      <p class="hint" id="ordenacao"></p>
+      <div class="ab" id="ab" hidden>
+        <div class="lado">
+          <h4>A</h4><div class="notas" id="notasA"></div>
+          <div class="hip" id="hipA"></div>
+          <button id="tocarA" style="background:#2a2414;color:var(--gold);border:1px solid var(--line)">▶ Ouvir A</button>
+          <button id="prefA">Prefiro A</button>
+        </div>
+        <div class="lado">
+          <h4>B</h4><div class="notas" id="notasB"></div>
+          <div class="hip" id="hipB"></div>
+          <button id="tocarB" style="background:#2a2414;color:var(--gold);border:1px solid var(--line)">▶ Ouvir B</button>
+          <button id="prefB">Prefiro B</button>
+        </div>
+      </div>
+      <p class="hint" id="contador"></p>
+      <div id="gostoBox" hidden>
+        <div class="pesos" id="pesos"></div>
+        <p class="aviso" id="avisoGosto"></p>
+      </div>
+    </details>
+  </div>
+
+  <div class="card">
+    <details open>
+      <summary>Complexidade — quanto desta canção é Rumi</summary>
+      <div id="cxvazio" class="hint">Gere uma melodia para medir.</div>
+      <div id="cx" hidden>
+        <div class="barra" id="barra"></div>
+        <p class="hint" id="cxespaco"></p>
+        <div class="medidas" id="medidas"></div>
+        <label>Compasso: o desenho rítmico se repete melhor em…</label>
+        <div class="compassos" id="compassos"></div>
+        <p class="hint" id="cxcompasso"></p>
+      </div>
+    </details>
+  </div>
+
+  <div class="card">
+    <details open>
+      <summary>Auditoria (por que a nota dura o que dura)</summary>
+      <div class="audit" id="audit">Gere uma melodia para ver a trilha de auditoria.</div>
+    </details>
+  </div>
+</div>
+
+<script>
+let CORPUS=null, ATUAL=null, ULTIMA=null;
+const $=s=>document.querySelector(s);
+const VOGAIS='aeiouáàâãéêíóôõúü';
+
+async function api(url, opts){
+  const r = await fetch(url, opts);
+  let d = null;
+  try{ d = await r.json(); }catch(e){ throw new Error(`resposta ilegível (HTTP ${r.status})`); }
+  if(!r.ok) throw new Error(d && d.erro ? d.erro : `HTTP ${r.status}`);
+  return d;
+}
+
+async function init(){
+  try{
+    CORPUS = await api('/api/corpus');
+  }catch(e){
+    $('#semaforo').textContent = 'Falha ao carregar o corpus: '+e.message;
+    return;
+  }
+  const sel=$('#verso');
+  CORPUS.versos.forEach(v=>{
+    const o=document.createElement('option'); o.value=v.id; o.textContent=v.obra; sel.appendChild(o);
+  });
+  sel.onchange=()=>mostrarVerso(sel.value);
+  mostrarVerso(CORPUS.versos[0].id);
+}
+
+function mostrarVerso(id){
+  const v=CORPUS.versos.find(x=>x.id===id); ATUAL=v; ULTIMA=null;
+  $('#persa').textContent=v.persa;
+  $('#glosa').textContent='glosa: '+v.glosa_pt+'  ·  imagem: '+v.imagem;
+
+  // Princípio 1 do processo: a fonte é sagrada e visível. Uma escansão que não
+  // confere com o metro declarado não pode aparecer com o mesmo peso das que
+  // conferem — o selo diz de qual das duas se trata.
+  const cm = v.conferencia_metro || {};
+  const selo = $('#selo'), divs = $('#divs');
+  divs.innerHTML='';
+  if(v.metro_conferido === false || cm.conforme === false){
+    selo.innerHTML = '<span class="selo aviso">escansão não conferida — '+v.metro+'</span>';
+    (cm.divergencias||[]).forEach(d=>{
+      const li=document.createElement('li'); li.textContent=d; divs.appendChild(li);
+    });
+  } else {
+    selo.innerHTML = '<span class="selo ok">escansão confere com '+v.metro+'</span>';
+  }
+  desenharScan();
+  validarLetra();
+}
+
+/* Desenha as caixas de sílaba: persa + símbolo do aruz + duração, e embaixo a
+   sílaba do português quando houver melodia gerada. É o mesmo componente que
+   já existia, agora servindo de régua para a co-produção. */
+function desenharScan(){
+  const v=ATUAL, scan=$('#scan'); scan.innerHTML='';
+  const pt = silabasPT();
+  const durs = ULTIMA ? ULTIMA.notas.map(n=>n.dur) : null;
+  v.silabas.forEach((s,i)=>{
+    const m=v.escansao[i], longa=(m==='–'||m==='=');
+    const d=document.createElement('div');
+    let cls='syl '+(longa?'longa':'curta');
+    if(ULTIMA){ cls += pt[i]!==undefined ? ' casada' : ' vazia'; }
+    d.className=cls;
+    const dur = durs && durs[i]!==undefined ? durs[i] : null;
+    d.innerHTML = `<div class="s">${s}</div>`
+      + `<div class="m">${m==='–'?'—':(m==='='?'=':'u')}</div>`
+      + (dur!==null ? `<div class="d">${dur}</div>` : '')
+      + (ULTIMA ? `<div class="pt">${pt[i]!==undefined?pt[i]:'·'}</div>` : '');
+    scan.appendChild(d);
+  });
+  // sílabas do português que não têm nota: sobra, marcada em vermelho
+  if(ULTIMA && pt.length > v.silabas.length){
+    pt.slice(v.silabas.length).forEach(s=>{
+      const d=document.createElement('div');
+      d.className='syl sobra';
+      d.innerHTML=`<div class="s">sem nota</div><div class="m">!</div><div class="pt">${s}</div>`;
+      scan.appendChild(d);
+    });
+  }
+}
+
+function silabasPT(){
+  return $('#letra').value.split(/[\s,;.!?]+/).filter(Boolean)
+    .flatMap(p=>p.split('-')).map(s=>s.trim()).filter(Boolean);
+}
+
+/* Candidatos a elisão: fronteiras vogal|vogal entre sílabas vizinhas. É o
+   ajuste que os arranjos do projeto já usam ("que eu" -> "queeu") e que o
+   handout previa sugerir. */
+function candidatosElisao(sil){
+  const fora=[];
+  for(let i=0;i<sil.length-1;i++){
+    const a=sil[i].slice(-1).toLowerCase(), b=sil[i+1].slice(0,1).toLowerCase();
+    if(VOGAIS.includes(a)&&VOGAIS.includes(b)) fora.push(`${sil[i]}·${sil[i+1]}`);
+  }
+  return fora;
+}
+
+function validarLetra(){
+  const sem=$('#semaforo'), dica=$('#dicaElisao');
+  const pt=silabasPT();
+  if(!ULTIMA){
+    sem.className='semaforo';
+    sem.textContent = pt.length
+      ? `${pt.length} sílabas escritas — gere a melodia para validar contra o aruz.`
+      : 'Gere uma melodia e escreva a letra para validar sílaba↔nota.';
+    dica.textContent=''; return;
+  }
+  const n=ULTIMA.notas.length, d=pt.length-n;
+  if(pt.length===0){
+    sem.className='semaforo';
+    sem.textContent=`${n} notas esperando letra.`;
+    dica.textContent=''; return;
+  }
+  if(d===0){
+    sem.className='semaforo ok';
+    sem.textContent=`✓ ${pt.length} sílabas para ${n} notas — a letra cabe no ritmo de Rumi.`;
+    dica.textContent='';
+  } else if(d>0){
+    sem.className='semaforo erro';
+    sem.textContent=`${pt.length} sílabas para ${n} notas — ${d} sobrando.`;
+    const c=candidatosElisao(pt);
+    dica.textContent = c.length
+      ? `Elisão possível (${d} necessária${d>1?'s':''}) nestas fronteiras vogal-vogal: ${c.slice(0,6).join('  ')}`
+      : 'Sem fronteira vogal-vogal para elidir: corte uma palavra ou use uma operação rítmica.';
+  } else {
+    sem.className='semaforo erro';
+    sem.textContent=`${pt.length} sílabas para ${n} notas — faltam ${-d}.`;
+    dica.textContent='Acrescente sílabas, ou aplique diminuição para adensar o ritmo.';
+  }
+  desenharScan();
+}
+
+$('#ent').oninput=e=>$('#entv').textContent=e.target.value;
+$('#amb').oninput=e=>$('#ambv').textContent=e.target.value;
+$('#letra').oninput=validarLetra;
+
+async function gerar(){
+  const body={verso_id:ATUAL.id, modo:$('#modo').value,
+              entropia:parseFloat($('#ent').value), ambito:parseInt($('#amb').value,10),
+              operacao:$('#operacao').value, semente:'diva',
+              letra:$('#letra').value || undefined};
+  let d;
+  try{
+    d = await api('/api/gerar',{method:'POST',headers:{'Content-Type':'application/json'},
+                               body:JSON.stringify(body)});
+  }catch(e){
+    $('#audit').textContent='Erro do servidor: '+e.message;
+    return;
+  }
+  ULTIMA=d;
+  const a=d.auditoria, cm=a.conferencia_metro||{};
+  let txt=`verso: ${a.verso_id}  (${a.obra})\n`;
+  txt+=`metro: ${a.metro} · modo: ${d.modo} · tônica MIDI ${a.tonica_midi}\n`;
+  txt+=`metro confere com a escansão: ${cm.conforme}\n`;
+  (cm.divergencias||[]).forEach(x=>{ txt+=`   divergência: ${x}\n`; });
+  txt+=`\nregra de duração: ${a.regra_duracao}\n`;
+  txt+=`regra de altura  : ${a.regra_altura}\n`;
+  const ops=(a.operacoes_ritmicas&&a.operacoes_ritmicas.length)?a.operacoes_ritmicas.join(' → '):'derivação direta';
+  txt+=`operações        : ${ops}\n`;
+  txt+=`rastro do aruz intacto: ${d.rastro?d.rastro.rastro_intacto:'?'}`;
+  if(d.anacruse) txt+=` · anacruse ${d.anacruse}`;
+  txt+=`\nsílabas: ${a.conferencia.n_silabas} · notas: ${a.conferencia.n_notas} · alinhado: ${a.conferencia.alinhado}\n\n`;
+  txt+='sílaba   aruz  base → dur   grau  nota\n';
+  d.notas.forEach(n=>{
+    const seta = n.dur===n.dur_base ? '  =  ' : '  →  ';
+    txt+=`${n.silaba.padEnd(8)} ${n.aruz==='–'?'—':n.aruz}     ${String(n.dur_base).padStart(4)}${seta}${String(n.dur).padEnd(5)} ${String(n.grau_modal).padStart(2)}${n.oitava?'+'+n.oitava+'8ª':'   '}  ${n.nome}\n`;
+  });
+  $('#audit').textContent=txt;
+  desenharComplexidade(d);
+  desenharScan();
+  validarLetra();
+}
+
+/* O painel responde à pergunta que a decomposição de Gell-Mann e Lloyd torna
+   computável: que fração desta canção veio de Rumi e que fração veio do
+   sorteio. E mostra, ao lado, as medidas que de fato ordenam candidatas —
+   porque a fração é quase constante dentro de um mesmo verso e modo. */
+function desenharComplexidade(d){
+  const c=d.complexidade; if(!c){return;}
+  $('#cxvazio').hidden=true; $('#cx').hidden=false;
+  const dec=c.decomposicao, pct=Math.round(dec.fracao_da_fonte*100);
+  $('#barra').innerHTML =
+    `<span class="rumi" style="width:${pct}%">Rumi ${pct}%</span>`+
+    `<span class="acaso" style="width:${100-pct}%">acaso ${100-pct}%</span>`;
+  $('#cxespaco').textContent =
+    `${dec.bits_de_rumi} bits vêm da escansão de Rumi, ${dec.bits_de_acaso} bits do `+
+    `passeio melódico — ${dec.melodias_no_espaco.toLocaleString('pt-BR')} melodias `+
+    `distintas neste espaço. A fração é praticamente a mesma para todas elas: `+
+    `ela descreve, não escolhe.`;
+
+  const m=c.metricas_mir, e=c.encaixe;
+  const cartoes=[
+    ['entropia de altura', m.entropia_de_altura, ''],
+    ['consistência modal', m.consistencia_modal, ''],
+    ['groove', m.consistencia_de_groove, `em ${c.compasso_medido} quarters`],
+    ['cantabilidade', e.cantabilidade.cantabilidade, 'ordena melodias'],
+    ['aderência ao metro', e.aderencia_ao_metro.aderencia, 'ordena melodias'],
+  ];
+  if(e.ajuste_prosodico && e.ajuste_prosodico.aplicavel)
+    cartoes.push(['ajuste prosódico', e.ajuste_prosodico.ajuste, 'ordena letras']);
+  $('#medidas').innerHTML = cartoes.map(([r,v,o])=>
+    `<div class="medida"><div class="r">${r}</div><div class="v">${v===null?'—':v}</div>`+
+    `<div class="o">${o}</div></div>`).join('');
+
+  const mc=c.melhor_compasso;
+  $('#compassos').innerHTML = Object.entries(mc.escores).map(([q,v])=>
+    `<span class="comp${parseFloat(q)===mc.melhor?' melhor':''}">${q} → ${v}</span>`).join('');
+  const nat=c.compasso_natural;
+  let txtc = `O pé do metro dura ${nat.duracao_do_pe} quarters `+
+             `(${nat.em_colcheias} colcheias), e a busca empírica concorda: o desenho `+
+             `rítmico se repete melhor em ${mc.melhor}.`;
+  if(e.ajuste_prosodico && e.ajuste_prosodico.choques && e.ajuste_prosodico.choques.length)
+    txtc += ' Choque prosódico: '+e.ajuste_prosodico.choques
+      .map(x=>`tônica "${x.silaba}" em sílaba curta`).join(', ')+'.';
+  $('#cxcompasso').textContent = txtc;
+}
+$('#gerar').onclick=gerar;
+
+/* Julgamento A/B — o estágio 8 do pipeline, e a única verdade de referência
+   que este projeto tem. A tela nunca apresenta hipótese como qualidade: o
+   rótulo vem junto do valor, vindo do servidor. */
+let LOTE=[], PAR=[0,1];
+
+async function buscarLote(){
+  $('#ordenacao').textContent='buscando…';
+  try{
+    const d = await api('/api/candidatas',{method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({verso_id:ATUAL.id, modo:$('#modo').value,
+                           n:200, lote:8, ambito:parseInt($('#amb').value,10)})});
+    LOTE=d.candidatas; PAR=[0,1];
+    $('#ordenacao').textContent =
+      `${d.geradas} geradas · peneira cortou ${d.peneira.reprovadas} · ${d.ordenacao}`;
+    $('#ab').hidden=false;
+    mostrarPar();
+  }catch(e){ $('#ordenacao').textContent='Erro: '+e.message; }
+}
+
+function mostrarPar(){
+  if(LOTE.length<2){ $('#ab').hidden=true; return; }
+  [['A',PAR[0]],['B',PAR[1]]].forEach(([lado,idx])=>{
+    const c=LOTE[idx];
+    $('#notas'+lado).textContent = c.notas.map(n=>n.nome).join(' ');
+    $('#hip'+lado).innerHTML = Object.entries(c.hipoteses).map(([k,v])=>
+      `<b>${k.replace(/_/g,' ')}:</b> ${v.valor} <i>(${v.estado})</i>`).join('<br>');
+  });
+}
+
+async function julgar(preferida){
+  if(LOTE.length<2) return;
+  const a=LOTE[PAR[0]], b=LOTE[PAR[1]];
+  try{
+    const r = await api('/api/julgar',{method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({a:a.atributos, b:b.atributos, preferida,
+        contexto:{verso:ATUAL.id, modo:$('#modo').value, a:a.semente, b:b.semente}})});
+    $('#contador').textContent =
+      `${r.n} julgamento${r.n===1?'':'s'} gravado${r.n===1?'':'s'}.`
+      + (r.n>=40 ? ' A partir daqui o ganho estaciona — pode parar.' : '');
+    mostrarGosto(r);
+  }catch(e){ $('#contador').textContent='Erro: '+e.message; }
+  PAR=[PAR[1], (PAR[1]+1) % LOTE.length];
+  if(PAR[0]===PAR[1]) PAR[1]=(PAR[1]+1)%LOTE.length;
+  mostrarPar();
+}
+
+function mostrarGosto(r){
+  $('#gostoBox').hidden=false;
+  const e=r.explicacao;
+  if(!e.treinado){ $('#pesos').textContent=e.texto; $('#avisoGosto').textContent=''; return; }
+  $('#pesos').textContent = e.texto + '\n\n' +
+    e.ordenados.map(([n,p])=>`${p>=0?'+':''}${p.toFixed(3)}  ${n}`).join('\n');
+  $('#avisoGosto').textContent = (r.confianca && r.confianca.aviso) || '';
+}
+
+$('#novoLote').onclick=buscarLote;
+$('#prefA').onclick=()=>julgar('a');
+$('#prefB').onclick=()=>julgar('b');
+$('#verGosto').onclick=async()=>{
+  try{ mostrarGosto(await api('/api/gosto')); }
+  catch(e){ $('#pesos').textContent='Erro: '+e.message; }
+};
+
+// síntese simples (Web Audio) — apenas guia, não gravação
+let ctx;
+function tocar(){
+  if(!ULTIMA){ $('#semaforo').textContent='Gere uma melodia antes de tocar.'; return; }
+  ctx=ctx||new (window.AudioContext||window.webkitAudioContext)();
+  const bpm=88, spb=60/bpm, t0=ctx.currentTime+0.08;
+  let t=t0+(ULTIMA.anacruse||0)*spb;   // respeita o deslocamento da síncope
+  ULTIMA.notas.forEach(n=>{
+    const dur=n.dur*spb, f=440*Math.pow(2,(n.midi-69)/12);
+    const o=ctx.createOscillator(), g=ctx.createGain();
+    o.type='triangle'; o.frequency.value=f;
+    g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(0.2,t+0.02);
+    g.gain.exponentialRampToValueAtTime(0.001,t+dur*0.95);
+    o.connect(g).connect(ctx.destination); o.start(t); o.stop(t+dur);
+    t+=dur;
+  });
+}
+$('#tocar').onclick=tocar;
+
+function tocarNotas(notas, anacruse){
+  ctx=ctx||new (window.AudioContext||window.webkitAudioContext)();
+  const bpm=88, spb=60/bpm; let t=ctx.currentTime+0.08+(anacruse||0)*spb;
+  notas.forEach(n=>{
+    const dur=n.dur*spb, f=440*Math.pow(2,(n.midi-69)/12);
+    const o=ctx.createOscillator(), g=ctx.createGain();
+    o.type='triangle'; o.frequency.value=f;
+    g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(0.2,t+0.02);
+    g.gain.exponentialRampToValueAtTime(0.001,t+dur*0.95);
+    o.connect(g).connect(ctx.destination); o.start(t); o.stop(t+dur);
+    t+=dur;
+  });
+}
+$('#tocarA').onclick=()=>LOTE[PAR[0]] && tocarNotas(LOTE[PAR[0]].notas, LOTE[PAR[0]].anacruse);
+$('#tocarB').onclick=()=>LOTE[PAR[1]] && tocarNotas(LOTE[PAR[1]].notas, LOTE[PAR[1]].anacruse);
+
+init();
+</script>
+</body>
+</html>

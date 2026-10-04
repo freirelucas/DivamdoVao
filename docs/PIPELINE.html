@@ -1,0 +1,57 @@
+<!DOCTYPE html><html lang=pt-BR><head><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><title>O pipeline — Divã do Vão</title><style>
+body{font-family:Georgia,serif;max-width:820px;margin:0 auto;padding:24px 18px 80px;
+background:#12100c;color:#efe8da;font-size:17px;line-height:1.6}
+h1,h2,h3{color:#d0a94b} h1{border-bottom:2px solid #332d22;padding-bottom:.2em}
+h2{border-bottom:1px solid #332d22;padding-bottom:.2em;margin-top:1.8em}
+code,pre{background:#0e0c08;color:#d0a94b;border:1px solid #332d22;border-radius:6px}
+code{padding:1px 5px;font-size:.9em} pre{padding:12px;overflow-x:auto;font-size:.82rem;color:#b0a390}
+table{border-collapse:collapse;width:100%;font-size:.9rem} th,td{border:1px solid #332d22;padding:7px 10px;text-align:left}
+th{color:#c06a3c} a{color:#c06a3c} blockquote{border-left:3px solid #c06a3c;padding-left:14px;color:#b0a390;font-style:italic}
+em{color:#b0a390} del{color:#6b6255} hr{border:none;border-top:1px solid #332d22;margin:2em 0}
+</style></head><body>
+<h1>O pipeline — do verso de Rumi à partitura</h1>
+<pre> 0  FONTE        data/aruz_corpus.json          verso persa + escansão do aruz
+ 1  CONFERIR     conferir_metro()               a escansão casa com o metro declarado?
+ 2  DURAR        durar_por_aruz()               escansão -&gt; durações
+ 3  OPERAR       engine/ritmo.py                inversão, aumentação, deslocamento…
+ 4  GERAR        gerar_melodia()                N candidatas
+────────────────────────────────────────────────────────────  barato, automático
+ 5  PENEIRAR     engine/filtros.py              só o degenerado (~0,07%)
+ 6  MEDIR        engine/complexidade.py         decomposição, MIR, encaixe
+ 7  LOTE/ORDENAR engine/selecao.py · gosto.py   medoides, ou o gosto aprendido
+────────────────────────────────────────────────────────────  caro: escuta humana
+ 8  JULGAR       comparação A/B                 treina o gosto
+ 9  LETRAR       ajuste_prosodico()             letra PT validada contra o aruz
+10  EXPORTAR     engine/export.py               MusicXML + MIDI + auditoria</pre>
+<p>A linha divisória é o desenho inteiro: tudo à esquerda é barato e automático, e o pipeline existe para empurrar o máximo de trabalho para lá, porque o que custa é o ouvido do autor.</p>
+<h2>Como rodar</h2>
+<pre>python3 engine/pipeline.py --verso masnavi_1 --n 300 --lote 8
+python3 engine/pipeline.py --verso masnavi_1 --julgar 40      # laço A/B
+python3 engine/pipeline.py --explicar-gosto
+python3 engine/pipeline.py --verso divan_2214 --export musicxml,midi</pre>
+<p>Ou pela interface: <code>python3 app/server.py</code>, card &quot;Julgar candidatas&quot;.</p>
+<h2>O tamanho do problema</h2>
+<table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td>material de Rumi no corpus</td><td>3 versos, 36 sílabas, <strong>21 segundos</strong></td></tr><tr><td>sequências de nota distintas que o motor pode emitir</td><td>~590 milhões por modo</td></tr><tr><td>tocadas em sequência</td><td>milhares de anos</td></tr><tr><td>o que a peneira corta</td><td><strong>0,07%</strong></td></tr><tr><td>o que a escuta humana alcança numa vida (8 h/dia, 60 anos)</td><td><strong>0,6%</strong></td></tr></tbody></table>
+<p>Não há atalho automático que substitua a escuta. É isso que o estágio 8 resolve, e por isso ele é o único que produz verdade neste projeto.</p>
+<h2>O que cada estágio pode afirmar</h2>
+<table><thead><tr><th>estágio</th><th>afirma</th><th>não afirma</th></tr></thead><tbody><tr><td>0-4</td><td>derivação auditável da fonte, nota a nota</td><td>nada sobre qualidade</td></tr><tr><td>5</td><td>&quot;isto não é melodia&quot;</td><td>&quot;isto é melodia ruim&quot;</td></tr><tr><td>6</td><td>descrição (entropia, groove, complexidade efetiva)</td><td>ordenação — a fração Rumi/acaso é constante dentro do espaço</td></tr><tr><td>7 sem julgamento</td><td><strong>cobertura</strong>: o lote representa o espaço</td><td>qualidade</td></tr><tr><td>7 com julgamento</td><td>ordenação pelo gosto aprendido, com confiança declarada</td><td>certeza — <code>confianca()</code> avisa quando estaciona</td></tr><tr><td>8</td><td>o que o autor prefere</td><td>que o modelo já saiba</td></tr></tbody></table>
+<p>O campo <code>motivo_da_ordem</code> acompanha cada candidata até o arquivo exportado, para que a saída nunca deixe dúvida sobre qual dos dois casos está em jogo.</p>
+<h2>Quatro heurísticas que a medição derrubou</h2>
+<p>Este é o resultado mais útil desta etapa, e está gravado também no docstring de <code>engine/filtros.py</code> para que ninguém o refaça.</p>
+<table><thead><tr><th>#</th><th>proposta</th><th>o que a medição mostrou</th></tr></thead><tbody><tr><td>1</td><td>cinco filtros de &quot;sanidade&quot;, reprovando 9 em 10</td><td>Gosto sem dados. &quot;Sem salto &gt; 5 semitons&quot; cortava 32,5% para remover o que já era 3,98% dos intervalos. &quot;Termina na tônica&quot; cortava 66,6%, jogando fora dois dos três fechos que o próprio motor faz de propósito.</td></tr><tr><td>2</td><td>alvo de 0,72 de reversão após salto (von Hippel &amp; Huron)</td><td>Norma de música clássica ocidental, e os próprios autores avisam que pode ser artefato de âmbito — o nosso tem 6 alturas.</td></tr><tr><td>3</td><td>usar <code>exemplos/*.musicxml</code> como perfil &quot;do autor&quot;</td><td>Autoria inventada: o campo <code>composer</code> diz &quot;Divã do Vão&quot;, que é o nome do projeto; os arquivos foram gerados por music21; e <code>exemplos/README.md</code> já registrava que não são saída deste motor.</td></tr><tr><td>4</td><td>lote inicial &quot;diverso&quot; por k-center</td><td><strong>26% pior que sorteio aleatório</strong>: k-center escolhe extremos, e extremos cobrem mal o miolo.</td></tr></tbody></table>
+<p>O padrão nas quatro é o mesmo: buscar uma autoridade externa — intuição, norma publicada, autoria suposta, diversidade vaga — em vez de aceitar que <strong>ainda não existe verdade de referência neste projeto</strong>.</p>
+<p>O que sobrou, medido: <strong>medoides</strong> (k-means++ e a candidata real mais próxima de cada centro) cobre o espaço 13% a 17% melhor que o sorteio aleatório, em lotes de 4 a 20. É afirmação sobre cobertura, não sobre qualidade.</p>
+<h2>Duas hipóteses em teste</h2>
+<p>Derivam do material que o corpus declara, não de norma nenhuma. Aparecem sempre rotuladas, da CLI ao JSON exportado.</p>
+<ul><li><strong>eco entre pés</strong> — o contorno do pé 2 ecoar o do pé 1. Os pés são de Rumi.</li><li><strong>estável em longa</strong> — grau de tônica, terça ou quinta caindo em sílaba longa.</li></ul>
+<p>Que ordenar por elas produza música melhor é hipótese, e os julgamentos do autor confirmam ou matam cada uma. Se matarem, viram o quinto item da tabela acima.</p>
+<h2>Um defeito do gerador, não da seleção</h2>
+<p>O contorno do pé 2 repetia o do pé 1 em 5,81% dos casos contra 3,70% por acaso: o ritmo deriva dos pés do aruz, mas a melodia era cega a eles. <strong>Não se seleciona o que nunca é gerado</strong> — nenhum ranqueador produziria coerência motívica num espaço que não a contém.</p>
+<p><code>gerar_melodia(motivico=True)</code> faz o segundo pé reusar os passos do primeiro, perturbados por <code>entropia</code>. O eco exato vai de 5,6% para 25,5%. Fica desligado por padrão: é mudança de caráter musical, não correção de auditoria.</p>
+<h2>Quantos julgamentos bastam</h2>
+<p>Medido em simulação com gosto sintético linear e ruído de 15%:</p>
+<table><thead><tr><th>julgamentos</th><th>aleatório</th><th>ativo</th></tr></thead><tbody><tr><td>10</td><td>0,521</td><td>0,606</td></tr><tr><td>20</td><td>0,536</td><td>0,638</td></tr><tr><td>40</td><td>0,751</td><td><strong>0,816</strong></td></tr><tr><td>80</td><td>0,743</td><td>0,782</td></tr><tr><td>160</td><td>0,743</td><td>0,788</td></tr></tbody></table>
+<p>(tau de Kendall contra o gosto verdadeiro.)</p>
+<p><strong>As duas curvas estacionam a partir de ~40.</strong> O teto é a inconsistência do julgamento humano, não a falta de dados: pedir 160 comparações desperdiçaria o tempo do autor sem melhorar a ordenação. Quarenta comparações são cerca de dez minutos.</p>
+<p>A simulação assume que o gosto é linear nos atributos medidos. Se não for, o teto real é menor — e é <code>confianca()</code> que denuncia, em vez de o modelo ranquear com segurança fingida.</p>
+<hr><p><em>Gerado de PIPELINE.md por docs/gerar_html.py</em></p></body></html>
