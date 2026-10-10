@@ -460,16 +460,23 @@ def ajuste_prosodico(frase: Frase, letra: str | list[str]) -> dict:
     """
     if not frase.notas:
         return {"aplicavel": False, "motivo": "frase vazia"}
-    palavras = (separar_silabas_pt(letra) if isinstance(letra, str)
+    palavras = (silabar_pt(letra) if isinstance(letra, str)
                 else [[s] for s in letra])
     silabas = [s for palavra in palavras for s in palavra]
+    tonicas = indices_tonicos(palavras)
+    elisao = None
+    if len(silabas) != len(frase.notas) and isinstance(letra, str):
+        # o português cantado funde vogal final com vogal inicial seguinte, e é
+        # a contagem CANTADA que tem de bater com as notas
+        e = elidir_para(letra, len(frase.notas))
+        if e.get("aplicavel"):
+            silabas, tonicas, elisao = e["silabas"], e["tonicas"], e
     if len(silabas) != len(frase.notas):
         return {
             "aplicavel": False,
             "motivo": f"{len(silabas)} sílabas para {len(frase.notas)} notas",
             "silabas_pt": len(silabas), "notas": len(frase.notas),
         }
-    tonicas = indices_tonicos(palavras)
     longas = [n.aruz in LONGAS for n in frase.notas]
     # toda tônica deveria cair em sílaba longa do aruz; átona, em qualquer uma
     tonicas_em_longa = sum(1 for t, l in zip(tonicas, longas) if t and l)
@@ -485,6 +492,9 @@ def ajuste_prosodico(frase: Frase, letra: str | list[str]) -> dict:
         "tonicas_em_longa": tonicas_em_longa,
         "choques": tonicas_em_curta,
         "regra": "sílaba tônica do português deve cair em sílaba longa do aruz",
+        "elisao": ({"aplicadas": elisao["elisoes_aplicadas"],
+                    "disponiveis": elisao["elisoes_disponiveis"],
+                    "escolha": elisao["_escolha"]} if elisao else None),
         "aviso": "tonicidade por heurística (regra padrão do português, sem "
                  "dicionário); erra proparoxítonas não acentuadas",
     }
@@ -593,4 +603,275 @@ def relatorio(frase: Frase, verso: dict, metros: dict, ambito: int = 9,
         "compasso_natural": natural,
         "melhor_compasso": melhor_compasso(frase),
         "vetor_duracao": [round(x, 6) for x in vetor_duracao(frase)],
+    }
+
+
+# ---------------------------------------------------------------------------
+# silabação automática do português
+#
+# separar_silabas_pt() espera a letra já hifenizada pelo autor, que é a
+# convenção da interface. Mas exigir hifenização à mão a cada tentativa é
+# fricção no laço de co-produção — e foi exatamente o que me fez contar
+# palavras como sílabas na primeira versão da conferência de letra.
+#
+# Então aqui vai um silabador por regra. O português é tratável: a divisão é
+# quase toda fonotática. É HEURÍSTICA DECLARADA, não análise gramatical, e a
+# conferência de letra sempre mostra a divisão que usou, para o autor corrigir
+# com hífens quando ela errar.
+# ---------------------------------------------------------------------------
+
+_V = "aeiouáéíóúâêôàãõü"
+_V_FORTE = "aeoáéóâêôàã"          # núcleo que não vira semivogal
+_V_ACENTO = "áéíóúâêôàã"          # vogal acentuada quebra hiato
+_SEMI = "iu"                       # podem virar semivogal, se não acentuadas
+
+# dígrafos que abrem sílaba e nunca se separam
+_ONSET_DIG = ("ch", "lh", "nh", "gu", "qu")
+# encontros consonantais que abrem sílaba juntos
+_ONSET_CLU = ("bl", "br", "cl", "cr", "dl", "dr", "fl", "fr", "gl", "gr",
+              "pl", "pr", "tl", "tr", "vl", "vr")
+# dígrafos que SE SEPARAM entre sílabas (car-ro, pás-sa-ro, nas-cer)
+_SPLIT_DIG = ("rr", "ss", "sc", "sç", "xc", "xs")
+
+
+def _hiato_de_oxitona(p: str, j: int) -> bool:
+    """i/u que é o NÚCLEO tônico de oxítona, e por isso não vira semivogal.
+
+    'ca-ir' tem hiato e 'mais' tem ditongo, embora os dois sejam vogal + i +
+    consoante. O que separa os dois casos é o -r final, que puxa a tonicidade
+    para o i. Sem léxico não há como ir além disso, e a regra fica estreita de
+    propósito: só i/u seguido de r no fim da palavra.
+    """
+    resto = p[j + 1:]
+    return resto in ("r", "res", "rem")
+
+
+def _nucleos(p: str) -> list[tuple[int, int]]:
+    """Agrupa as vogais da palavra em núcleos silábicos (ditongos juntos)."""
+    nucs: list[list[int]] = []
+    i = 0
+    while i < len(p):
+        if p[i] not in _V:
+            i += 1
+            continue
+        # o u de qu/gu seguido de vogal não é núcleo próprio: em 'que' e
+        # 'guerra' ele é mudo, em 'água' e 'quase' é semivogal do núcleo
+        # seguinte. Nos dois casos quem manda é a vogal depois dele, e a
+        # consoante + u ficam no ataque (gu e qu estão em _ONSET_DIG). Quando o
+        # u vem antes de CONSOANTE ele é núcleo de verdade: 'a-gu-do'.
+        if (p[i] == "u" and i > 0 and p[i - 1] in "qg"
+                and i + 1 < len(p) and p[i + 1] in _V):
+            i += 1
+            continue
+        atual = [i]
+        j = i + 1
+        while j < len(p) and p[j] in _V:
+            ant, prox = p[j - 1], p[j]
+            junta = False
+            if ant in "ãõ" and prox in "oe":
+                junta = True                       # ditongo NASAL: ão, ãe, õe.
+                # Exceção às demais regras: aqui a semivogal é o/e, não i/u, e
+                # o til no primeiro elemento não quebra o ditongo — ele o cria.
+            elif (prox in _SEMI and prox not in _V_ACENTO and ant not in _SEMI
+                    and not _hiato_de_oxitona(p, j)):
+                junta = True                       # ditongo decrescente: ai, ou
+            elif ant in _SEMI and ant not in _V_ACENTO and prox in _V_FORTE:
+                # ditongo crescente (his-tó-ria), mas só se o i/u abre o núcleo
+                # e não é ele o tônico: 'a-le-gri-a' e 'va-zi-o' têm hiato,
+                # porque sem acento gráfico a tônica é a penúltima — o próprio
+                # i. Com acento em outra sílaba (his-TÓ-ria) o i é semivogal.
+                final = j + 1 == len(p)
+                sem_acento = not any(c in _V_ACENTO for c in p)
+                junta = len(atual) == 1 and not (final and sem_acento)
+            elif ant in _SEMI and prox in _SEMI and prox not in _V_ACENTO:
+                junta = True                       # -uiu, -uir
+            if not junta:
+                break
+            atual.append(j)
+            j += 1
+        nucs.append(atual)
+        i = j
+    return [(g[0], g[-1]) for g in nucs]
+
+
+def silabar_palavra_pt(palavra: str) -> list[str]:
+    """Divide UMA palavra em sílabas, por regra fonotática.
+
+    Heurística declarada. Erra onde o português foge da fonotática (nomes
+    próprios, estrangeirismos, alguns hiatos sem acento gráfico).
+    """
+    bruta = palavra.strip()
+    if not bruta:
+        return []
+    p = bruta.lower()
+    nucs = _nucleos(p)
+    if len(nucs) <= 1:
+        return [bruta]
+
+    cortes = []
+    for k in range(len(nucs) - 1):
+        fim_nuc, ini_prox = nucs[k][1], nucs[k + 1][0]
+        cons = p[fim_nuc + 1:ini_prox]
+        n = len(cons)
+        if n == 0:
+            corte = ini_prox                      # hiato: sa-í-da
+        elif n == 1:
+            corte = fim_nuc + 1                   # uma consoante vai para a frente
+        else:
+            par = cons[:2]
+            if n == 2 and (par in _ONSET_DIG or par in _ONSET_CLU):
+                corte = fim_nuc + 1               # mi-lho, pra-to
+            elif n == 2 and par in _SPLIT_DIG:
+                corte = fim_nuc + 2               # car-ro, nas-cer
+            else:
+                # deixa para a sílaba seguinte o maior onset possível
+                ult2 = cons[-2:]
+                if ult2 in _ONSET_DIG or ult2 in _ONSET_CLU:
+                    corte = ini_prox - 2          # abs-tra-to
+                else:
+                    corte = ini_prox - 1          # trans-por-te
+        cortes.append(corte)
+
+    pedacos, ant = [], 0
+    for c in cortes:
+        c = max(ant + 1, min(c, len(bruta)))
+        pedacos.append(bruta[ant:c])
+        ant = c
+    pedacos.append(bruta[ant:])
+    return [x for x in pedacos if x]
+
+
+def silabar_pt(letra: str) -> list[list[str]]:
+    """Silaba a letra inteira automaticamente, palavra por palavra.
+
+    Respeita o hífen do autor: palavra que já vem hifenizada é usada como está.
+    Assim a correção manual sempre vence a regra, que é o que se quer num laço
+    de co-produção.
+    """
+    saida = []
+    import re as _re
+    for bruta in _re.split(r"[\s,.;:!?\u2014\u2013]+", letra):
+        limpa = bruta.strip("\u00bf\u00a1\"'()[]\u00ab\u00bb\u2026")
+        if not limpa:
+            continue
+        if "-" in limpa:
+            saida.append([s for s in limpa.split("-") if s])
+        else:
+            saida.append(silabar_palavra_pt(limpa))
+    return saida
+
+
+# ---------------------------------------------------------------------------
+# elisão — a contagem CANTADA, que é a que vale para a canção
+#
+# O português cantado funde a vogal final de uma palavra com a vogal inicial da
+# seguinte: "escuta o junco" se canta es-cu-ta_o-jun-co, cinco sílabas, não
+# seis. A metrificação clássica portuguesa sempre contou assim.
+#
+# Sem isto o molde do aruz rejeita letra que de fato cabe — foi o que aconteceu
+# na primeira rodada da conferência, em que toda candidata "estourava" por duas
+# ou três sílabas que o canto funde sozinho.
+#
+# A elisão é POSSÍVEL, não obrigatória: quem canta escolhe. Então a conferência
+# devolve um INTERVALO (contagem cantada mínima, contagem escrita máxima) e o
+# molde encaixa se o número de posições do aruz cair dentro dele.
+# ---------------------------------------------------------------------------
+
+def contatos_vocalicos(palavras: list[list[str]]) -> list[dict]:
+    """Os pontos entre palavras em que a elisão é possível.
+
+    Vogal (ou vogal + s/m final átono não conta) no fim de uma palavra,
+    encontrando vogal no início da seguinte.
+    """
+    contatos = []
+    pos = 0
+    for k in range(len(palavras) - 1):
+        pos += len(palavras[k])
+        fim = palavras[k][-1].lower().strip("¿¡\"'()[]")
+        ini = palavras[k + 1][0].lower().strip("¿¡\"'()[]")
+        if fim and ini and fim[-1] in _V and ini[0] in _V:
+            contatos.append({
+                "entre": [palavras[k][-1], palavras[k + 1][0]],
+                "indice_da_silaba": pos,          # 1-based: a sílaba que se funde
+                "funde_em": f"{palavras[k][-1]}_{palavras[k + 1][0]}",
+            })
+    return contatos
+
+
+def contagem_cantada(letra: str) -> dict:
+    """Quantas sílabas a letra tem escrita, e quantas se canta com elisão.
+
+    Devolve o intervalo. Uma letra encaixa num molde de N posições se N estiver
+    entre a contagem cantada (com toda elisão possível) e a escrita (com
+    nenhuma) — porque a elisão é escolha de quem canta, não regra.
+    """
+    palavras = silabar_pt(letra)
+    silabas = [s for p in palavras for s in p]
+    contatos = contatos_vocalicos(palavras)
+    escrita = len(silabas)
+    cantada = escrita - len(contatos)
+    return {
+        "silabacao": palavras,
+        "silabas": silabas,
+        "n_escritas": escrita,
+        "n_cantadas_com_toda_elisao": cantada,
+        "elisoes_possiveis": contatos,
+        "intervalo": [cantada, escrita],
+        "_sobre": ("a elisão é possível, não obrigatória: quem canta escolhe. Daí o "
+                   "intervalo, e não um número só."),
+    }
+
+
+def elidir_para(letra: str, n_alvo: int) -> dict:
+    """Aplica elisões até a letra ter exatamente `n_alvo` sílabas cantadas.
+
+    Precisa existir porque a conferência prosódica exige uma sílaba por nota, e
+    com elisão a contagem escrita não é a cantada. Sem isto, toda letra com
+    contato de vogais ficava sem conferência de prosódia.
+
+    As elisões são aplicadas da esquerda para a direita, e isso é ESCOLHA
+    declarada: havendo mais contatos do que o necessário, qual deles se funde
+    muda que sílaba cai em que nota — decisão musical do autor, não da regra. O
+    campo `elisoes_aplicadas` diz quais foram, para ele trocar se quiser.
+    """
+    palavras = silabar_pt(letra)
+    silabas = [s for p in palavras for s in p]
+    tonicas = indices_tonicos(palavras)
+    contatos = contatos_vocalicos(palavras)
+    precisa = len(silabas) - n_alvo
+    if precisa < 0:
+        return {"aplicavel": False,
+                "motivo": f"a letra tem {len(silabas)} sílabas e o alvo é {n_alvo}: "
+                          f"elisão só diminui"}
+    if precisa > len(contatos):
+        return {"aplicavel": False,
+                "motivo": f"faltam elisões: precisa fundir {precisa} e há "
+                          f"{len(contatos)} contato(s) de vogais"}
+
+    # índices (1-based na sequência de sílabas) das fusões escolhidas
+    escolhidos = sorted(c["indice_da_silaba"] for c in contatos)[:precisa]
+    fundir = set(escolhidos)
+    novas_sil: list[str] = []
+    novas_ton: list[bool] = []
+    i = 0
+    while i < len(silabas):
+        if (i + 1) in fundir and i + 1 < len(silabas):
+            novas_sil.append(f"{silabas[i]}_{silabas[i + 1]}")
+            # a sílaba fundida é tônica se qualquer das duas era
+            novas_ton.append(bool(tonicas[i] or tonicas[i + 1]))
+            i += 2
+        else:
+            novas_sil.append(silabas[i])
+            novas_ton.append(tonicas[i])
+            i += 1
+    return {
+        "aplicavel": len(novas_sil) == n_alvo,
+        "silabas": novas_sil, "tonicas": novas_ton,
+        "n": len(novas_sil),
+        "elisoes_aplicadas": [c["funde_em"] for c in contatos
+                              if c["indice_da_silaba"] in fundir],
+        "elisoes_disponiveis": [c["funde_em"] for c in contatos],
+        "_escolha": ("fundidas da esquerda para a direita. Com mais contatos que o "
+                     "necessário, qual se funde muda que sílaba cai em que nota — "
+                     "decisão do autor, não da regra."),
     }

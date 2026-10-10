@@ -46,6 +46,27 @@ python3 ferramentas/colher.py --metro 'فاعلاتن فاعلاتن فاعلن'
 # conferir um vazn sem colher nada
 python3 engine/metrica.py 'مفتعلن مفاعلن مفتعلن مفاعلن'
 ```
+Montar a canção, com o livro-razão de onde vem cada camada:
+
+```bash
+# um gazal inteiro vira canção: seções, cadências, compasso do metro
+python3 engine/cancao.py --poema https://ganjoor.net/moulavi/shams/ghazalsh/sh1
+
+# conferir uma letra em português contra o molde do aruz
+python3 engine/cancao.py --verso masnavi_1 --corpus data/aruz_corpus.json \
+    --letra 'Escuta o junco: ele conta a dor que tem'
+
+# gravar partituras, MIDI e a auditoria da canção
+python3 engine/cancao.py --poema <url> --export /tmp/saida
+```
+
+Explorar o corpus árabe por tema:
+
+```bash
+python3 ferramentas/garimpar.py --panorama
+python3 ferramentas/garimpar.py --ponte atlal_saudade_de_lugar
+```
+
 
 
 ## Estrutura
@@ -63,14 +84,19 @@ python3 engine/metrica.py 'مفتعلن مفاعلن مفتعلن مفاعلن'
 | `engine/selecao.py` | Partida a frio por medoides; hipóteses sempre rotuladas |
 | `engine/gosto.py` | Ranqueador aprendido do julgamento do autor, com pesos legíveis |
 | `engine/metrica.py` | O vazn publicado vira escansão, com portão de fonte dupla |
+| `engine/forma.py` | Rima, radīf e taṣrīʿ medidos no texto — a periodicidade que licencia cadência |
+| `engine/cancao.py` | **A canção**: seções, cadências, molde da letra, e o livro-razão das garantias |
 | `engine/pipeline.py` | Os dez estágios encadeados, do verso à partitura |
 | `ferramentas/colher.py` | Colhe corpus do Ganjoor em lote (a única parte com rede) |
+| `ferramentas/indexar_arabe.py` | Indexa o corpus árabe (4,2 M de hemistíquios) com busca textual |
+| `ferramentas/garimpar.py` | Garimpa canção por ponte temática, com o estatuto viajando junto |
 | `app/server.py` · `app/index.html` | Servidor local e interface de co-produção |
 | `tests/` | Garantia de auditabilidade (54 testes) |
 | `handout/HANDOUT.md` | Handout completo do projeto |
 | `docs/PROCESSO_INTERFACE.md` | Desenho do processo da interface |
 | `docs/PIPELINE.md` | O pipeline, o funil e as quatro heurísticas derrubadas |
 | `docs/CORPUS.md` | Ampliar o corpus: o vazn publicado, a fonte dupla, e o que o lote não pode afirmar |
+| `data/pontes.json` | Doze pontes entre topos árabe e canção brasileira, cada uma com estatuto declarado |
 | `docs/PROPOSTA_divan_2214.md` | A correção filológica do verso do Divã (aplicada) |
 
 ## Como escolher entre milhões de melodias

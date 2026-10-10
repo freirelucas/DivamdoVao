@@ -50,7 +50,12 @@ import re
 import unicodedata
 
 # harakat árabes/persas, tatweel, e o que não conta para a rima
-_MARCAS = "".join(chr(c) for c in range(0x064B, 0x0653)) + "ٰـْ"
+# harakat, tatweel, e os juntadores de largura zero. O ZWNJ é ortográfico no
+# persa — separa grafemas dentro de uma palavra, sem som nenhum — e deixá-lo
+# entrar faria "اندیشه‌ها" e "تنها" parecerem rimas diferentes quando rimam.
+# Para a rima, ele não existe.
+_MARCAS = ("".join(chr(c) for c in range(0x064B, 0x0653))
+           + "ٰـْ‌‍‎‏")
 _PONTUACAO = "،؛؟.,;:!?—–-–—«»\"'()[]{}*"
 
 LIMIAR_COBERTURA = 0.70   # fração dos fechos que precisa compartilhar o fim

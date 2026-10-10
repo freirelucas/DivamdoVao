@@ -1761,6 +1761,223 @@ def test_termo_de_busca_e_normalizado_como_o_indice():
     assert sem_harakat("أَطْلَالٌ") == "اطلال"
 
 
+# ---------------------------------------------------------------------------
+# A CANÇÃO (engine/cancao.py) — o objeto que faltava, e o livro-razão
+#
+# A auditoria crítica deste repositório apontava, desde o começo, que o projeto
+# produzia MELODIAS e não canções: não havia seção, forma, tom, letra nem
+# cadência. Agora há. E com a exigência que o resto do projeto impõe: cada
+# camada declara de onde vem.
+#
+# O teste decisivo é test_cancao_nunca_declara_a_harmonia_como_derivada. Os
+# outros verificam mecanismo; esse verifica a honestidade da afirmação.
+# ---------------------------------------------------------------------------
+
+_LETRA_QUE_CABE = "Escuta o junco: ele conta a dor que tem"
+
+
+def _cancao_de_teste(modo="dorico"):
+    from engine.cancao import montar
+    vs = [_verso("masnavi_1"), _verso("masnavi_2")]
+    return montar(vs, CORPUS["metros"], id="t", titulo="teste", modo=modo,
+                  letra={"masnavi_1": _LETRA_QUE_CABE})
+
+
+def test_acordes_vem_das_notas_do_proprio_modo():
+    """O vocabulário harmônico é mecânico: 1-3-5-7 sobre cada grau, só com as
+    alturas do modo. Isso é constrangido, não estético — e é o que permite
+    separar o vocabulário (da escala) da escolha (do autor)."""
+    from engine.cancao import acordes_do_modo
+    from engine.generative import MODOS
+    for modo, graus in MODOS.items():
+        ac = acordes_do_modo(modo, 62)
+        assert len(ac) == len(graus)
+        permitidas = {(62 + g) % 12 for g in graus}
+        for a in ac:
+            assert a["cifra"] and "?" not in a["qualidade"], (modo, a)
+            for m in a["notas_midi"]:
+                assert m % 12 in permitidas, (modo, a["grau"], m)
+    # dórico de ré: o IV é maior, que é a cor mineira do modo
+    d = {a["grau"]: a["cifra"] for a in acordes_do_modo("dorico", 62)}
+    assert d["I"] == "Dm7" and d["IV"] == "G7" and d["VII"] == "Cmaj7", d
+
+
+def test_silabador_do_portugues_medido_e_com_limite_declarado():
+    """Heurística declarada, medida contra lista de prova: 98,7% em 78 palavras.
+
+    Existe porque exigir hifenização manual a cada tentativa é fricção no laço
+    de co-produção — e porque, sem silabador, a primeira versão da conferência
+    de letra contava PALAVRAS como sílabas.
+    """
+    from engine.complexidade import silabar_palavra_pt as s
+    casos = {
+        "escuta": "es-cu-ta", "junco": "jun-co", "coração": "co-ra-ção",
+        "saudade": "sau-da-de", "saída": "sa-í-da", "pássaro": "pás-sa-ro",
+        "carro": "car-ro", "milho": "mi-lho", "quase": "qua-se", "água": "á-gua",
+        "abstrato": "abs-tra-to", "transporte": "trans-por-te", "vão": "vão",
+        "sertão": "ser-tão", "vaqueiro": "va-quei-ro", "cair": "ca-ir",
+        "mais": "mais", "pai": "pai", "país": "pa-ís", "alegria": "a-le-gri-a",
+        "vazio": "va-zi-o", "história": "his-tó-ria", "que": "que",
+        "guerra": "guer-ra", "agudo": "a-gu-do", "aqui": "a-qui",
+        "pífano": "pí-fa-no", "esquina": "es-qui-na", "canções": "can-ções",
+    }
+    erros = [(w, e, "-".join(s(w))) for w, e in casos.items()
+             if "-".join(s(w)) != e]
+    assert not erros, erros
+    # limite conhecido, registrado em vez de escondido
+    assert "-".join(s("ciência")) == "ciên-cia", "o limite mudou; atualize o registro"
+
+
+def test_contagem_cantada_usa_elisao_e_devolve_intervalo():
+    """O português cantado funde vogal final com vogal inicial seguinte, e a
+    metrificação portuguesa sempre contou assim. Sem isto o molde do aruz
+    rejeitava letra que de fato cabe — foi o que aconteceu na primeira rodada,
+    em que toda candidata "estourava" por sílabas que o canto funde sozinho.
+    """
+    from engine.complexidade import contagem_cantada, elidir_para
+    c = contagem_cantada(_LETRA_QUE_CABE)
+    assert c["n_escritas"] == 14
+    assert c["n_cantadas_com_toda_elisao"] == 11
+    assert c["intervalo"] == [11, 14]
+    assert [x["funde_em"] for x in c["elisoes_possiveis"]] == ["ta_o", "co_e", "ta_a"]
+    e = elidir_para(_LETRA_QUE_CABE, 11)
+    assert e["aplicavel"] and e["n"] == 11
+    assert e["silabas"] == ["Es", "cu", "ta_o", "jun", "co_e", "le", "con",
+                            "ta_a", "dor", "que", "tem"]
+    assert len(e["tonicas"]) == 11
+    # elisão só diminui: pedir mais sílabas que o escrito não é aplicável
+    assert elidir_para(_LETRA_QUE_CABE, 20)["aplicavel"] is False
+
+
+def test_molde_da_letra_e_constrangido_e_nao_escreve_nada():
+    """A máquina guarda o molde; a letra é do autor. O campo diz isso."""
+    from engine.cancao import molde_da_letra
+    m = molde_da_letra(_verso("masnavi_1"))
+    assert m["_garantia"] == "constrangido"
+    assert m["n_silabas"] == 11
+    assert m["posicoes_longas"] == [1, 3, 4, 5, 7, 8, 9, 11]
+    assert m["posicoes_curtas"] == [2, 6, 10]
+    assert abs(m["duracao_total"] - 9.5) < 1e-9
+    assert "autoral" in m["_o_que_isto_e"]
+
+
+def test_conferir_letra_aceita_pelo_cantado_e_recusa_fora_do_intervalo():
+    from engine.cancao import conferir_letra
+    v = _verso("masnavi_1")
+    bom = conferir_letra(v, _LETRA_QUE_CABE)
+    assert bom["encaixa_na_contagem"] is True
+    assert bom["intervalo_cantavel"] == [11, 14]
+    assert bom["n_posicoes_do_aruz"] == 11
+    assert bom["prosodia"] and bom["prosodia"]["aplicavel"] is True
+    assert 0.0 <= bom["prosodia"]["ajuste"] <= 1.0
+    assert bom["prosodia"]["elisao"]["aplicadas"] == ["ta_o", "co_e", "ta_a"]
+
+    curta = conferir_letra(v, "Escuta o junco")
+    assert curta["encaixa_na_contagem"] is False
+    assert "Acrescente" in curta["o_que_fazer"]
+    assert curta["prosodia"] is None
+
+
+def test_cabeca_da_cancao_so_e_derivada_quando_ha_tasri():
+    """Onde a fonte marca a abertura com rima dupla, tratá-la como cabeça é
+    consequência. Onde não marca, é escolha — e o campo muda de garantia."""
+    from engine.cancao import secionar
+    com = [("یار چو خار آیدت", "یار چه کار آیدت"),
+           ("خود تو شکار آیدت", "پیل شکار آیدت"),
+           ("بستهٔ ابر آیدت", "مه به کنار آیدت")]
+    vs = [{"id": f"v{i}", "persa": h, "escansao": ["–", "u", "–"],
+           "metro": "ramal_mahzuf"} for i, c in enumerate(com) for h in c]
+    s = secionar(com, vs)
+    assert s[0].nome == "cabeça" and s[0].papel == "maṭlaʿ"
+    assert s[0].garantia_do_papel == "derivado" and "taṣrīʿ" in s[0].por_que
+    sem = [("alfa", "beta"), ("gama", "delta"), ("epsilon", "zeta")]
+    vs2 = [{"id": f"w{i}", "persa": h, "escansao": ["–"], "metro": "ramal_mahzuf"}
+           for i, c in enumerate(sem) for h in c]
+    assert all(x.nome != "cabeça" for x in secionar(sem, vs2))
+
+
+def test_plano_harmonico_separa_o_lugar_do_acorde():
+    """Em campos DIFERENTES, de propósito. Um só campo "harmonia" permitiria
+    apresentar a cor Clube da Esquina como consequência do aruz."""
+    ph = _cancao_de_teste().plano_harmonico()
+    assert ph["vocabulario_garantia"] == "constrangido"
+    assert ph["preferencia_garantia"] == "autoral"
+    assert "aruz não tem altura" in ph["_fronteira"] or "modal" in ph["_fronteira"]
+    for p in ph["pontos"]:
+        assert p["lugar_garantia"] == "derivado"
+        assert p["acorde_garantia"] == "autoral"
+        assert p["cifra"] and p["grau"]
+        assert "lugar_por_que" in p
+
+
+def test_cancao_nunca_declara_a_harmonia_como_derivada():
+    """O invariante central deste módulo.
+
+    O aruz é sistema de quantidade silábica: não tem altura, acorde nem função.
+    A música clássica árabe e persa é modal. Logo, harmonia funcional não pode
+    ser derivada do poema — ela é a importação deliberada do Clube da Esquina,
+    e é a obra do autor.
+
+    Se algum dia a auditoria passar a chamar a escolha dos acordes, a letra em
+    português ou o arranjo de "derivado", o projeto terá cometido exatamente a
+    fabricação que engine/filtros.py registra quatro vezes. Este teste cai.
+    """
+    from engine.cancao import GARANTIAS
+    a = _cancao_de_teste().auditoria()
+    camadas = a["camadas"]
+    for nome in ("escolha_dos_acordes", "letra_em_portugues", "tom_timbre_arranjo",
+                 "forma_agrupamento"):
+        assert camadas[nome]["garantia"] == "autoral", (nome, camadas[nome])
+    assert camadas["ritmo"]["garantia"] == "derivado"
+    assert camadas["lugar_das_cadencias"]["garantia"] == "derivado"
+    assert camadas["molde_da_letra"]["garantia"] == "constrangido"
+    # nenhuma camada inventa uma garantia fora das quatro declaradas
+    for nome, c in camadas.items():
+        if c.get("garantia"):
+            assert c["garantia"] in GARANTIAS, (nome, c["garantia"])
+            assert c["de_onde"], nome
+    assert "harmonia é do autor" in a["_a_fronteira_que_importa"]
+    assert a["resumo_das_garantias"].get("autoral", 0) >= 4
+
+
+def test_auditoria_da_cancao_cobre_a_canção_inteira():
+    c = _cancao_de_teste()
+    a = c.auditoria()
+    assert a["n_versos"] == 2 and a["n_secoes"] >= 1
+    assert a["duracao_total_quarters"] > 0 and a["duracao_total_segundos"] > 0
+    assert a["compasso"]["_garantia"] in ("derivado", "autoral")
+    for s in a["secoes"]:
+        assert all(s["conferencia_metro"]), s["nome"]
+        assert s["n_notas"] == sum(len(v["escansao"]) for v in
+                                   next(x.versos for x in c.secoes if x.nome == s["nome"]))
+    assert a["letra"]["encaixam"] == 1 and a["letra"]["sem_letra"] == 1
+
+
+def test_export_da_cancao_leva_a_letra_ELIDIDA_para_a_partitura():
+    """Uma sílaba por nota é o compromisso do projeto, e o exportador recusa
+    qualquer outra coisa. Então o que vai para a partitura é a letra já elidida
+    no número de notas — foi este guarda que pegou o bug de eu mandar a linha
+    inteira como se fosse uma sílaba só."""
+    from engine.cancao import escrever_cancao
+    c = _cancao_de_teste()
+    with tempfile.TemporaryDirectory() as tmp:
+        escritos = escrever_cancao(c, tmp, "x")
+        nomes = {p.name for p in escritos}
+        assert "x_cancao.json" in nomes
+        xmls = [p for p in escritos if p.suffix == ".musicxml"]
+        assert len(xmls) == 2
+        aud = json.loads(next(p for p in escritos
+                              if p.name.endswith("_1_auditoria.json")).read_text("utf-8"))
+        le = aud["letra_elidida"]
+        assert le["silabas"][2] == "ta_o" and len(le["silabas"]) == 11
+        assert le["elisoes_aplicadas"] == ["ta_o", "co_e", "ta_a"]
+        xml = next(p for p in xmls if "_1." in p.name).read_text("utf-8")
+        import re as _re
+        assert len(_re.findall(r"<text>", xml)) == 11
+        assert _re.search(r"<beats>7</beats>\s*<beat-type>8</beat-type>", xml), \
+            "o pé do ramal mede 3.5 quarters: a partitura tem de sair em 7/8"
+
+
 if __name__ == "__main__":
     import traceback
     testes = [f for name, f in sorted(globals().items()) if name.startswith("test_")]
